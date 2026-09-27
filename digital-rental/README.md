@@ -6,6 +6,7 @@
 [![Chain ID](https://img.shields.io/badge/Chain_ID-11155111-informational)](#)
 [![Contract](https://img.shields.io/badge/Contract-0xa0F7...5861-success?logo=solidity)](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black?logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react)](https://react.dev/)
 [![ethers.js](https://img.shields.io/badge/ethers.js-v6-purple)](https://docs.ethers.org/v6/)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-7952B3?logo=bootstrap)](https://getbootstrap.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](#)
@@ -13,182 +14,202 @@
 ---
 
 ## 📑 สารบัญ (Table of Contents)
-1. [ภาพรวมโครงการ (Project Overview)](#1-ภาพรวมโครงการ-project-overview)
-2. [Tech Stack & Frameworks ทั้งหมดที่ใช้ (Technology Stack)](#2-tech-stack--frameworks-ทั้งหมดที่ใช้-technology-stack)
-3. [สถาปัตยกรรมและองค์ประกอบของระบบ (System Architecture & Components)](#3-สถาปัตยกรรมและองค์ประกอบของระบบ-system-architecture--components)
-4. [โครงสร้างไดเรกทอรีและไฟล์ (Project Directory Structure)](#4-โครงสร้างไดเรกทอรีและไฟล์-project-directory-structure)
-5. [Smart Contract & รายละเอียดบนบล็อกเชน (Smart Contract Details)](#5-smart-contract--รายละเอียดบนบล็อกเชน-smart-contract-details)
-6. [ขั้นตอนการสร้าง ติดตั้ง และเริ่มใช้งานระบบ (Step-by-Step Setup Guide)](#6-ขั้นตอนการสร้าง-ติดตั้ง-และเริ่มใช้งานระบบ-step-by-step-setup-guide)
-7. [คู่มือการทดสอบการใช้งานหลัก (User Testing & Workflow Guide)](#7-คู่มือการทดสอบการใช้งานหลัก-user-testing--workflow-guide)
-8. [มาตรฐานความปลอดภัยและความน่าเชื่อถือ (Security & Best Practices)](#8-มาตรฐานความปลอดภัยและความน่าเชื่อถือ-security--best-practices)
+1. [ภาพรวมโครงการและปัญหาที่แก้ไข (Project Overview & Problem Statement)](#1-ภาพรวมโครงการและปัญหาที่แก้ไข-project-overview)
+2. [Tech Stack & Frameworks ทั้งหมดอย่างละเอียด (Technology Stack)](#2-tech-stack--frameworks-ทั้งหมดอย่างละเอียด-technology-stack)
+3. [สถาปัตยกรรมและองค์ประกอบของระบบ (System Architecture & Data Flow)](#3-สถาปัตยกรรมและองค์ประกอบของระบบ-system-architecture--data-flow)
+4. [โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory & Component Structure)](#4-โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด-directory-structure)
+5. [Smart Contract & ซอร์สโค้ดสัญญาอัจฉริยะ (Smart Contract & Solidity Code)](#5-smart-contract--ซอร์สโค้ดสัญญาอัจฉริยะ-solidity-code)
+6. [ฟีเจอร์หลักและการทำงานของระบบ (Core Features & Functionalities)](#6-ฟีเจอร์หลักและการทำงานของระบบ-core-features)
+7. [ขั้นตอนการติดตั้งและเริ่มใช้งาน (Step-by-Step Installation & Setup Guide)](#7-ขั้นตอนการติดตั้งและเริ่มใช้งาน-setup-guide)
+8. [คู่มือการทดสอบการใช้งานทีละสเต็ป (Step-by-Step Testing & User Guide)](#8-คู่มือการทดสอบการใช้งานทีละสเต็ป-testing-guide)
+9. [ความปลอดภัยและการตรวจสอบสัญญา (Security, Best Practices & On-Chain Audit)](#9-ความปลอดภัยและการตรวจสอบสัญญา-security--best-practices)
+10. [ข้อมูลสัญญาและผู้พัฒนา (Contract Info & Developer Credits)](#10-ข้อมูลสัญญาและผู้พัฒนา-credits)
 
 ---
 
-## 1. ภาพรวมโครงการ (Project Overview)
+## 1. ภาพรวมโครงการและปัญหาที่แก้ไข (Project Overview)
 
-**Blockchain-Based Rental System** คือแพลตฟอร์ม Web3 DApp สำหรับการบริหารจัดการการเช่าทรัพย์สินและอุปกรณ์แบบกระจายศูนย์ (Decentralized) ออกแบบมาเพื่อแก้ไขปัญหาความขัดแย้งในระบบการเช่าแบบดั้งเดิม โดยเปลี่ยนจากการพึ่งพาตัวกลางหรือกระดาษสัญญา มาเป็นการใช้ **Smart Contract** บนเครือข่ายบล็อกเชน Ethereum Sepolia ในการควบคุมสัญญาและการชำระเงินโดยอัตโนมัติ (Trustless & Autonomous)
+**Blockchain-Based Rental System (BlockRental)** คือแพลตฟอร์ม Web3 DApp สำหรับการบริหารจัดการการเช่าทรัพย์สินและอุปกรณ์แบบ Peer-to-Peer (P2P) ที่ทำงานบนบล็อกเชนแบบกระจายศูนย์ (Decentralized) 100% โดยเปลี่ยนจากการพึ่งพาตัวกลาง บุคคลที่สาม หรือกระดาษสัญญา มาเป็นการใช้ **Smart Contract** บนเครือข่ายบล็อกเชน Ethereum Sepolia ในการควบคุมสัญญา การล็อกเงินมัดจำ (Escrow) และการชำระเงินโดยอัตโนมัติ
 
-### 🚨 ปัญหาของระบบการเช่าแบบเดิม (Traditional Rental Flaws)
+### 🚨 ปัญหาของระบบการเช่าแบบดั้งเดิม (Traditional Rental Flaws)
 * **ความเสี่ยงในการถูกยึดหรือเบี้ยวเงินมัดจำ (Deposit Withholding Disputes)**: เจ้าของทรัพย์สินหรือแพลตฟอร์มตัวกลางมักคืนเงินมัดจำล่าช้า หรือหักเงินมัดจำโดยไม่มีหลักฐานที่ตรวจสอบได้
-* **การพึ่งพาตัวกลางและค่าธรรมเนียมแฝง (Middleman Fees)**: แพลตฟอร์มตัวกลางหักส่วนแบ่งค่าคอมมิชชั่นสูง (15% - 30%)
-* **ข้อมูลสัญญาแก้ไขได้และขาดความโปร่งใส (Vulnerable Records)**: ข้อมูลในฐานข้อมูลรวมศูนย์ (Centralized DB) สามารถถูกแก้ไข เปลี่ยนแปลง หรือลบได้
+* **การพึ่งพาตัวกลางและค่าธรรมเนียมสูง (Middleman Fees)**: แพลตฟอร์มตัวกลางหักค่าคอมมิชชั่นสูง (15% - 30%) จากทั้งผู้เช่าและผู้ให้เช่า
+* **ข้อมูลสัญญาแก้ไขได้และขาดความโปร่งใส (Vulnerable Records)**: ข้อมูลในฐานข้อมูลรวมศูนย์ (Centralized Database) สามารถถูกแก้ไข เปลี่ยนแปลง หรือลบประวัติได้
 * **ไม่มีระบบ Escrow ล็อกเงินที่ปลอดภัย**: การโอนเงินตรงผ่านบัญชีธนาคารทำให้ผู้เช่าเสี่ยงไม่ได้รับของ หรือผู้ให้เช่าเสี่ยงไม่ได้รับเงิน
 
 ### 💡 ทางออกด้วยเทคโนโลยีบล็อกเชน (Blockchain Solutions)
-* **Smart Contract Escrow**: เงินมัดจำและค่าเช่าจะถูกล็อกไว้ในสัญญาอัจฉริยะอย่างปลอดภัย และจะโอนคืนให้ผู้เช่าทันทีเมื่อมีการกดคืนของ (Return Item) สำเร็จ
-* **บันทึกถาวรแก้ไขไม่ได้ (Immutable Ledger)**: ทุกรายการเช่า รหัสทรัพย์สิน เวลาเริ่มต้น-สิ้นสุด และ Transaction Hash ถูกจัดเก็บอย่างถาวรบน Sepolia Blockchain
-* **การระบุตัวตนด้วย Web3 Wallet**: ล็อกอินผ่านกระเป๋าเงินดิจิทัล **MetaMask** โดยไม่ต้องกรอกรหัสผ่าน ไม่มีการจัดเก็บข้อมูลส่วนตัวในเซิร์ฟเวอร์
-* **รองรับ 2 ภาษาเต็มรูปแบบ (Bilingual TH / EN)**: มีระบบสลับภาษาไทยและอังกฤษ พร้อมระบบจำค่าการตั้งค่าของผู้ใช้
+* **Smart Contract Escrow**: เงินมัดจำความเสียหาย (Security Deposit) จะถูกล็อกไว้ใน Bytecode ของสัญญาอัจฉริยะอย่างปลอดภัย และจะปลดล็อกโอนคืนให้ผู้เช่าทันทีเมื่อมีการกดยืนยันคืนของ (Return Item)
+* **บันทึกถาวรแก้ไขไม่ได้ (Immutable Ledger)**: ทุกรายการเช่า รหัสทรัพย์สิน เวลาเริ่มต้น-สิ้นสุด และ Transaction Hash ถูกจัดเก็บอย่างถาวรบนบล็อกเชน
+* **การระบุตัวตนด้วย Web3 Wallet**: เข้าสู่ระบบผ่านกระเป๋าเงินดิจิทัล **MetaMask** โดยไม่ต้องใช้ Username/Password ไม่มีการเก็บข้อมูลส่วนบุคคลบนเซิร์ฟเวอร์
+* **ตรวจสอบความโปร่งใสได้ 100% (/claims)**: มีหน้าตรวจสอบสัญญาเช่าและเงินมัดจำสดจาก Smart Contract ป้องกันข้อพิพาท
+* **รองรับ 2 ภาษาเต็มรูปแบบ (Bilingual TH / EN)**: มีระบบสลับภาษาไทยและอังกฤษ พร้อมระบบบันทึกความจำของผู้ใช้
 
 ---
 
-## 2. Tech Stack & Frameworks ทั้งหมดที่ใช้ (Technology Stack)
+## 2. Tech Stack & Frameworks ทั้งหมดอย่างละเอียด (Technology Stack)
 
-โปรเจกต์นี้ได้รับการออกแบบตามมาตรฐาน Web3 DApp สมัยใหม่ โดยใช้เครื่องมือและไลบรารีล่าสุดดังนี้:
-
-| หมวดหมู่ (Category) | เทคโนโลยีที่ใช้ (Technology) | เวอร์ชัน (Version) | หน้าที่และความรับผิดชอบ (Role & Description) |
+| หมวดหมู่ (Category) | เทคโนโลยี / เครื่องมือ (Technology) | เวอร์ชัน (Version) | หน้าที่และความรับผิดชอบ (Role & Description) |
 |---|---|---|---|
-| **Core Framework** | [Next.js](https://nextjs.org/) (App Router) | `^14.2.15` | เฟรมเวิร์กหลักของ React สำหรับทำ SSR/CSR, App Routing, Optimization และ API handling (ใช้ **JavaScript ES6+** ล้วน ไม่มี TypeScript เพื่อความเรียบง่าย) |
-| **UI Library** | [React](https://react.dev/) / React DOM | `^18.3.1` | ไลบรารีจัดการ Component State, Lifecycle, Portals, Context API และ Virtual DOM |
-| **Web3 Client Engine** | [ethers.js](https://docs.ethers.org/v6/) | `^6.13.4` | ไลบรารีสื่อสารกับ Ethereum Blockchain จัดการ `BrowserProvider`, `JsonRpcProvider`, `Contract`, `parseEther`, `formatEther`, การลงนามธุรกรรม และเข้ารหัส calldata |
-| **Web3 Wallet Interface** | [MetaMask](https://metamask.io/) (EIP-1193) | Standard | กระเป๋าเงินคริปโตของผู้ใช้ (Injected Provider `window.ethereum`) ใช้ยืนยันตัวตน, จัดการ Key Pairs, สลับ Network และ Sign ธุรกรรม |
-| **Styling & Components** | [Bootstrap](https://getbootstrap.com/) | `^5.3.3` | CSS Framework จัดการ Grid System, Responsive Layout, Badges, Modals, Cards, Tables และ Utility Classes |
-| **Icon Library** | [Bootstrap Icons](https://icons.getbootstrap.com/) | `^1.11.3` | ไอคอนเวกเตอร์ SVG สำหรับการแสดงผล UI, เมนูนำทาง, หมวดหมู่ และสถานะธุรกรรม |
-| **Smart Contract** | [Solidity](https://soliditylang.org/) | `^0.8.20` | ภาษาเขียน Smart Contract สำหรับคอมไพล์เป็น EVM Bytecode |
-| **Security Standards** | [OpenZeppelin Contracts](https://www.openzeppelin.com/contracts) | `^5.0.0` | ไลบรารีความปลอดภัยมาตรฐาน: `Ownable` (การจัดการสิทธิ์เจ้าของระบบ) และ `ReentrancyGuard` (ป้องกันการโจมตี Reentrancy Attack) |
-| **Target Blockchain** | Ethereum Sepolia Testnet | Chain ID: `11155111` | บล็อกเชนทดสอบ PoS มาตรฐานของ Ethereum สำหรับการทดสอบ Web3 DApp ด้วย Sepolia ETH ฟรี |
-| **Development IDE** | [Remix IDE](https://remix.ethereum.org/) | Web-based | เครื่องมือสำหรับเขียน ทดสอบ คอมไพล์ และ Deploy สัญญาอัจฉริยะขึ้น Sepolia |
-| **Runtime & Bundler** | [Node.js](https://nodejs.org/) & Webpack | Node v18+ / v20+ / v22+ | สภาพแวดล้อมรัน JavaScript ฝั่งเครื่องเซิร์ฟเวอร์และเครื่องนักพัฒนา |
+| **Core Framework** | [Next.js](https://nextjs.org/) (App Router) | `^14.2.15` | เฟรมเวิร์ก React หลักสำหรับการจัดการ App Router, Fast Refresh, Static & Dynamic Page Generation (ใช้ **JavaScript ES6+** ล้วน ไม่มี TypeScript เพื่อความเรียบง่ายและเสถียร) |
+| **Frontend Library** | [React](https://react.dev/) / React DOM | `^18.3.1` | ไลบรารีหลักสำหรับสร้าง UI จัดการ State, Hooks, Context API, Effect และ Portal Rendering |
+| **Web3 Client Engine** | [ethers.js](https://docs.ethers.org/v6/) | `^6.13.4` | ไลบรารีเชื่อมต่อ Ethereum บล็อกเชน จัดการ `BrowserProvider`, `JsonRpcProvider`, `Contract`, `parseEther`, `formatEther`, BigInt handling และ EIP-191 Signature |
+| **Web3 Wallet Interface** | [MetaMask](https://metamask.io/) (EIP-1193) | Standard | กระเป๋าเงิน Web3 ดิจิทัล (Injected Provider `window.ethereum`) ใช้ยืนยันตัวตน, จัดการ Key Pairs, สลับ Network อัตโนมัติ และ Sign ธุรกรรม |
+| **UI Framework** | [Bootstrap](https://getbootstrap.com/) | `^5.3.3` | CSS Framework จัดการ Responsive Grid System, Mobile Layout, Buttons, Modals, Cards, Badges และ Utilities |
+| **Icons Library** | [Bootstrap Icons](https://icons.getbootstrap.com/) | `^1.11.3` | ไอคอนเวกเตอร์ SVG สำหรับการแสดงผลหน้าเว็บ, เมนูนำทาง, หมวดหมู่ และสถานะธุรกรรม |
+| **Smart Contract** | [Solidity](https://soliditylang.org/) | `^0.8.20` | ภาษาสำหรับเขียนโปรแกรมสัญญาอัจฉริยะ คอมไพล์เป็น EVM Bytecode |
+| **Security Standards** | [OpenZeppelin Contracts](https://www.openzeppelin.com/contracts) | `^5.0.0` | ไลบรารีความปลอดภัยมาตรฐานระดับสากล: `Ownable` (จัดการสิทธิ์เจ้าของ) และ `ReentrancyGuard` (ป้องกันการโจมตี Reentrancy Attack) |
+| **Target Blockchain** | Ethereum Sepolia Testnet | Chain ID: `11155111` | บล็อกเชนทดสอบแบบ Proof-of-Stake ของ Ethereum สำหรับการทดสอบ Web3 DApp โดยใช้ Sepolia ETH ฟรี |
+| **Development Tooling** | [Remix IDE](https://remix.ethereum.org/) | Web-based | เครื่องมือสำหรับเขียน ทดสอบ Unit Test, คอมไพล์ และ Deploy สัญญาอัจฉริยะขึ้น Sepolia |
+| **Runtime Environment** | [Node.js](https://nodejs.org/) & npm | Node v18+ / v20+ / v22+ | สภาพแวดล้อมรัน JavaScript ฝั่งเครื่องเซิร์ฟเวอร์และเครื่องนักพัฒนา |
 
 ---
 
-## 3. สถาปัตยกรรมและองค์ประกอบของระบบ (System Architecture & Components)
+## 3. สถาปัตยกรรมและองค์ประกอบของระบบ (System Architecture & Data Flow)
 
-### 🏗️ แผนภาพสถาปัตยกรรมรวม (High-Level Architecture Diagram)
+### 🏗️ แผนภาพสถาปัตยกรรมรวม (System Architecture Diagram)
 
 ```mermaid
 flowchart TD
-    subgraph UserSpace ["User Environment"]
-        User["ผู้ใช้งาน (User / Landlord / Renter)"]
-        MM["MetaMask Wallet (Extension / Mobile)"]
+    subgraph ClientLayer ["1. ผู้ใช้งานและกระเป๋าเงิน (Client Environment)"]
+        User["ผู้ใช้งาน (Renter / Landlord)"]
+        MetaMask["MetaMask Extension (EIP-1193)"]
     end
 
-    subgraph FrontendApp ["Next.js 14 Frontend Application (localhost:3000)"]
-        subgraph ContextLayer ["Context State Layer"]
-            WalletContext["WalletContext.js\n- Account\n- Balance\n- Network Check\n- Connect / Logout"]
-            LangContext["LanguageContext.js\n- TH / EN Dictionary\n- LocalStorage Persistence"]
+    subgraph FrontendApp ["2. Next.js 14 Web3 Application (localhost:3000)"]
+        subgraph Contexts ["State & Provider Layer"]
+            WalletCtx["WalletContext.js\n- Account & Balance\n- Chain ID Validation\n- Auto Switch to Sepolia"]
+            LangCtx["LanguageContext.js\n- TH / EN Dictionary\n- LocalStorage Cache"]
         end
 
-        subgraph PagesLayer ["Pages (App Router)"]
-            P_Home["/ (Home Landing Page)"]
-            P_Dash["/dashboard (System Overview)"]
-            P_Rentals["/rentals (Browse Catalog)"]
-            P_Details["/rentals/[id] (Asset Specs)"]
-            P_Reg["/register (List New Asset)"]
-            P_My["/my-rentals (Renter Dashboard)"]
-            P_Owner["/owner (Owner Asset Panel)"]
-            P_Claims["/claims (Security Deposit Info)"]
+        subgraph Routes ["Pages (App Router)"]
+            P_Home["/ (Landing Page)"]
+            P_Rentals["/rentals (Browse & Filter)"]
+            P_Details["/rentals/[id] (Item Specs & Rent)"]
+            P_MyRentals["/my-rentals (Active Rentals & Return)"]
+            P_Register["/register (List New Asset)"]
+            P_Owner["/owner (Owner Inventory Management)"]
+            P_Claims["/claims (On-Chain Escrow Audit)"]
+            P_Dash["/dashboard (System Overview & Metrics)"]
         end
 
-        subgraph ComponentLayer ["Reusable Components"]
-            C_Nav["Navbar.js & LanguageSwitcher"]
-            C_Wallet["ConnectWallet.js (Modal Portal)"]
-            C_Modal["RentalModal.js (Escrow Checkout)"]
-            C_Card["ItemCard.js & RentalCard.js"]
-            C_Status["RentalStatus.js & TransactionStatus.js"]
-            C_Footer["Footer.js"]
-        end
-
-        subgraph LibLayer ["Web3 & Data Integration"]
-            L_Contract["lib/contract.js (ethers.js v6 Instance)"]
-            L_Wallet["lib/wallet.js (EIP-1193 & Switch Sepolia)"]
-            L_Seed["lib/seedData.js (Catalog & Hybrid Fallback)"]
-            L_Const["lib/constants.js (Addresses & Network Config)"]
-            L_ABI["abi/RentalSystem.json (Smart Contract ABI)"]
+        subgraph Services ["Web3 Integration Layer"]
+            LibContract["lib/contract.js\n- ethers.js Contract Instance\n- Write & Read Functions\n- Hybrid On-Chain / Seed Engine"]
+            LibWallet["lib/wallet.js\n- EIP-1193 Methods\n- Address Shortener"]
+            LibSeed["lib/seedData.js\n- Catalog Seed\n- Dynamic LocalStorage State"]
         end
     end
 
-    subgraph BlockchainNetwork ["Ethereum Sepolia Testnet"]
-        RPC_Node["Sepolia Public RPC Node"]
-        Contract["RentalSystem.sol\nAddress: 0xa0F7a17b...5861"]
-        Etherscan["Sepolia Etherscan Explorer"]
+    subgraph BlockchainNetwork ["3. บล็อกเชน Ethereum Sepolia Testnet"]
+        SepoliaRPC["Ethereum Sepolia RPC Node\n(https://rpc.sepolia.org)"]
+        SmartContract["RentalSystem.sol Smart Contract\nAddress: 0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861"]
+        Etherscan["Sepolia Etherscan Block Explorer"]
     end
 
-    User --> MM
-    User --> PagesLayer
-    PagesLayer --> ContextLayer
-    PagesLayer --> ComponentLayer
-    ComponentLayer --> LibLayer
-    ContextLayer <--> MM
-    MM <--> RPC_Node
-    L_Contract <--> RPC_Node
-    RPC_Node <--> Contract
-    Contract -.-> Etherscan
+    User --> MetaMask
+    User --> Routes
+    Routes --> Contexts
+    Routes --> Services
+    Contexts <--> MetaMask
+    Services <--> MetaMask
+    MetaMask <--> SepoliaRPC
+    Services <--> SepoliaRPC
+    SepoliaRPC <--> SmartContract
+    SmartContract -.-> Etherscan
 ```
 
 ---
 
-## 4. โครงสร้างไดเรกทอรีและไฟล์ (Project Directory Structure)
+### 🔄 วงจรชีวิตของสัญญาเช่าและเงินมัดจำ (Rental & Escrow Lifecycle)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Available: เจ้าของลงทะเบียนทรัพย์สิน (registerItem)
+    Available --> Active: ผู้เช่าชำระค่าเช่า + เงินมัดจำ (createRental)
+    note right of Active
+        เงินค่าเช่า (Rental Fee) โอนให้เจ้าของทันที
+        เงินมัดจำ (Deposit) ถูกล็อกไว้ใน Smart Contract
+    end note
+    Active --> Returned: ผู้เช่าส่งมอบของคืน (returnItem)
+    note right of Returned
+        Smart Contract โอนเงินมัดจำคืน
+        เข้ากระเป๋าผู้เช่าโดยอัตโนมัติ 100%
+    end note
+    Returned --> Available: ทรัพย์สินพร้อมให้เช่าต่อ
+    Active --> Cancelled: ยกเลิกสัญญาเช่า (cancelRental)
+```
+
+---
+
+## 4. โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory Structure)
 
 ```text
-digital-rental/
-├── abi/
-│   └── RentalSystem.json         # ABI (Application Binary Interface) ของ Smart Contract
-├── app/                          # Next.js 14 App Router Directory
-│   ├── claims/
-│   │   └── page.js               # หน้าข้อมูลระบบการเคลมและคืนเงินมัดจำ
-│   ├── dashboard/
-│   │   └── page.js               # หน้าแดชบอร์ดภาพรวมระบบและ Ledger ประวัติธุรกรรม
-│   ├── my-rentals/
-│   │   └── page.js               # หน้ารายการทรัพย์สินที่ฉันเช่า จัดการการคืนของ
-│   ├── owner/
-│   │   └── page.js               # แดชบอร์ดเจ้าของทรัพย์สิน ปิด/เปิด การให้เช่า
-│   ├── register/
-│   │   └── page.js               # หน้าลงทะเบียนทรัพย์สินใหม่ขึ้น Smart Contract
-│   ├── rentals/
-│   │   ├── [id]/
-│   │   │   └── page.js           # หน้ารายละเอียดทรัพย์สินรายชิ้น ตารางคำนวณราคา
-│   │   └── page.js               # หน้าค้นหาและกรองทรัพย์สินให้เช่าทั้งหมด
-│   ├── layout.css                # สไตล์ตกแต่งเพิ่มเติมและแอนิเมชัน Web3
-│   ├── layout.js                 # Root Layout ห่อหุ้ม Wallet & Language Providers
-│   └── page.js                   # Landing Page หน้าแรก แนะนำระบบและคู่มือ
-├── components/                   # React UI Components
-│   ├── ConnectWallet.js          # ปุ่มเชื่อมต่อกระเป๋า และ Modal สถานะกระเป๋า (ใช้ React Portal)
-│   ├── ErrorMessage.js           # กล่องแจ้งเตือนข้อผิดพลาดพร้อมปุ่มลองใหม่
-│   ├── Footer.js                 # ส่วนท้ายของหน้าเว็บ แสดงเครดิตและลิขสิทธิ์
-│   ├── ItemCard.js               # การ์ดแสดงรายการทรัพย์สินในหน้าค้นหา
-│   ├── Loading.js                # แอนิเมชันกำลังโหลดข้อมูลจากบล็อกเชน
-│   ├── Navbar.js                 # แถบเมนูด้านบน สลับภาษา และเชื่อมต่อ MetaMask
-│   ├── RentalCard.js             # การ์ดแสดงสัญญาเช่า
-│   ├── RentalModal.js            # หน้าต่าง Modal คำนวณราคาและกดยืนยันทำสัญญาเช่า
-│   ├── RentalStatus.js           # ป้าย Badge แสดงสถานะสัญญา (Active, Returned, Cancelled)
-│   └── TransactionStatus.js      # ป้ายแสดงสถานะธุรกรรมและลิงก์ Etherscan Tx
-├── context/
-│   ├── LanguageContext.js        # React Context จัดการระบบ 2 ภาษา (TH / EN)
-│   └── WalletContext.js          # React Context จัดการสถานะ MetaMask, Balance, Network
-├── lib/
-│   ├── constants.js              # ค่าคงที่ระบบ (Chain ID, Network Name, Fallback Address)
-│   ├── contract.js               # ฟังก์ชันเชื่อมต่อและเรียกใช้ Smart Contract ผ่าน ethers.js
-│   ├── seedData.js               # ระบบข้อมูลแคตตาล็อกจำลองและ Dynamic Local Storage
-│   ├── translations.js           # พจนานุกรมคำแปลภาษาไทยและภาษาอังกฤษ
-│   └── wallet.js                 # ฟังก์ชัน Utility จัดการ EIP-1193, สลับเชน และตัดทอน Address
-├── .env.local                    # การตั้งค่า Environment Variables ฝั่ง Client
-├── package.json                  # รายการ Dependencies และ Scripts รันโปรเจกต์
-└── README.md                     # เอกสารคู่มือฉบับสมบูรณ์
+Blockchain-Rental-System-DApp/
+├── .env.local                    # ค่าคอนฟิก Environment Variables (Local)
+├── .env.local.example            # ตัวอย่างการตั้งค่า Environment Variables
+├── .gitignore                    # ไฟล์ควบคุมการไม่นำไฟล์ระบบ/node_modules ขึ้น Git
+├── package.json                  # การตั้งค่า Root Package
+├── README.md                     # เอกสารโครงการฉบับสมบูรณ์ (ไฟล์นี้)
+│
+└── digital-rental/               # ซอร์สโค้ดโปรเจกต์ Next.js 14 DApp
+    ├── abi/
+    │   └── RentalSystem.json     # ABI (Application Binary Interface) ของสัญญาอัจฉริยะ
+    │
+    ├── app/                      # ไดเรกทอรีหน้าเว็บระบบ Next.js 14 App Router
+    │   ├── claims/
+    │   │   └── page.js           # หน้าตรวจสอบสัญญาและเงินมัดจำสดจากบล็อกเชน (/claims)
+    │   ├── dashboard/
+    │   │   └── page.js           # หน้าแดชบอร์ดภาพรวมระบบ กราฟ และ Ledger ประวัติธุรกรรม (/dashboard)
+    │   ├── my-rentals/
+    │   │   └── page.js           # หน้ารายการทรัพย์สินที่ฉันเช่า จัดการการคืนของ (/my-rentals)
+    │   ├── owner/
+    │   │   └── page.js           # แดชบอร์ดเจ้าของทรัพย์สิน สลับสถานะ เปิด/พัก ให้เช่า (/owner)
+    │   ├── register/
+    │   │   └── page.js           # หน้าลงทะเบียนทรัพย์สินใหม่ขึ้นบล็อกเชน (/register)
+    │   ├── rentals/
+    │   │   ├── [id]/
+    │   │   │   └── page.js       # หน้ารายละเอียดทรัพย์สินรายชิ้น สเปก และการเช่า (/rentals/:id)
+    │   │   └── page.js           # หน้าค้นหาและกรองทรัพย์สินให้เช่าทั้งหมด (/rentals)
+    │   ├── globals.css           # สไตล์สากล, เอฟเฟกต์ Glassmorphism และ Web3 Animations
+    │   ├── layout.js             # Root Layout ห่อหุ้ม WalletProvider และ LanguageProvider
+    │   └── page.js               # Landing Page แนะนำแพลตฟอร์มและฟีเจอร์เด่น (/)
+    │
+    ├── components/               # คอมโพเนนต์ UI แบบ Reusable
+    │   ├── ConnectWallet.js      # ปุ่มและ Modal จัดการกระเป๋าเงิน MetaMask (ใช้ React Portal)
+    │   ├── ErrorMessage.js       # การแจ้งเตือนข้อผิดพลาดพร้อมปุ่มลองใหม่
+    │   ├── Footer.js             # ส่วนท้ายหน้าเว็บ แสดงลิงก์และสถานะบล็อกเชน
+    │   ├── ItemCard.js           # การ์ดแสดงรายการทรัพย์สินในหน้าแคตตาล็อก
+    │   ├── Loading.js            # แอนิเมชัน Spinner แสดงระหว่างรอโหลดข้อมูลบล็อกเชน
+    │   ├── Navbar.js             # แถบเมนูด้านบน สลับ 2 ภาษา และปุ่มเชื่อมต่อกระเป๋า
+    │   ├── RentalCard.js         # การ์ดแสดงสัญญาเช่าในหน้าประวัติ
+    │   ├── RentalModal.js        # หน้าต่างคำนวณราคาเช่าและกดยืนยันทำสัญญาเช่า
+    │   ├── RentalStatus.js       # ป้าย Badge สีแสดงสถานะสัญญา (Active, Returned, Cancelled)
+    │   └── TransactionStatus.js  # ป้ายแสดงสถานะธุรกรรมและลิงก์เปิดดูบน Sepolia Etherscan
+    │
+    ├── context/                  # React Contexts จัดการ Global State
+    │   ├── LanguageContext.js    # ระบบจัดการ 2 ภาษา (ภาษาไทย 🇹🇭 / ภาษาอังกฤษ 🇬🇧)
+    │   └── WalletContext.js      # ระบบตรวจจับกระเป๋า MetaMask, Network และ Balance
+    │
+    ├── lib/                      # ยูทิลิตี้และฟังก์ชันเชื่อมต่อบล็อกเชน
+    │   ├── constants.js          # ค่าคงที่ระบบ (Chain ID, Network Name, Fallback RPC)
+    │   ├── contract.js           # ฟังก์ชัน Read/Write สัญญาอัจฉริยะผ่าน ethers.js v6
+    │   ├── seedData.js           # ข้อมูลแคตตาล็อกจำลองและ Dynamic LocalStorage
+    │   ├── translations.js       # พจนานุกรมคำแปลภาษาไทยและภาษาอังกฤษ
+    │   └── wallet.js             # ฟังก์ชันจัดการ EIP-1193, สลับเชน และจัดรูปแบบ Address
+    │
+    ├── next.config.js            # การตั้งค่า Next.js
+    └── package.json              # รายการ Dependencies และ Scripts ของ Next.js
 ```
 
 ---
 
-## 5. Smart Contract & รายละเอียดบนบล็อกเชน (Smart Contract Details)
+## 5. Smart Contract & ซอร์สโค้ดสัญญาอัจฉริยะ (Solidity Code)
 
-### 📌 ข้อมูลการ Deploy จริงบนบล็อกเชน
-* **Contract Name**: `RentalSystem`
-* **Network**: Ethereum Sepolia Testnet
-* **Chain ID**: `11155111` (`0xaa36a7`)
-* **Contract Address**: `0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`
-* **Etherscan Link**: [https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
-* **Compiler Version**: Solidity `^0.8.20`
-* **Optimization**: Enabled (200 runs)
+### 📌 ข้อมูลการ Deploy จริงบน Sepolia Testnet
+* **ชื่อสัญญา (Contract Name)**: `RentalSystem`
+* **เครือข่ายบล็อกเชน (Network)**: Ethereum Sepolia Testnet
+* **Chain ID**: `11155111` (Hex: `0xaa36a7`)
+* **Contract Address**: [`0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
+* **Compiler**: Solidity `^0.8.20` / Optimization Enabled (200 runs)
 
 ### 📜 ซอร์สโค้ดสัญญาอัจฉริยะฉบับสมบูรณ์ (`RentalSystem.sol`)
 
@@ -199,6 +220,11 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+/**
+ * @title RentalSystem
+ * @dev สัญญาอัจฉริยะสำหรับการบริหารจัดการการเช่าทรัพย์สินแบบกระจายศูนย์
+ * มีระบบ Escrow สำหรับเงินมัดจำประกันความเสียหาย และป้องกันการโจมตี Reentrancy
+ */
 contract RentalSystem is Ownable, ReentrancyGuard {
     enum RentalStatus { None, Active, Returned, Cancelled }
 
@@ -246,11 +272,29 @@ contract RentalSystem is Ownable, ReentrancyGuard {
     function getRentalCount() external view returns (uint256) { return _rentalCounter; }
 
     // 1. ลงทะเบียนทรัพย์สินใหม่ (Owner)
-    function registerItem(string calldata name, string calldata description, string calldata category, uint256 rentalPrice, uint256 deposit) external returns (uint256) {
+    function registerItem(
+        string calldata name,
+        string calldata description,
+        string calldata category,
+        uint256 rentalPrice,
+        uint256 deposit
+    ) external returns (uint256) {
         require(bytes(name).length > 0, "Item name cannot be empty");
         require(rentalPrice > 0, "Rental price must be greater than zero");
+
         _itemCounter++;
-        items[_itemCounter] = Item(_itemCounter, payable(msg.sender), name, description, category, rentalPrice, deposit, true, block.timestamp);
+        items[_itemCounter] = Item(
+            _itemCounter,
+            payable(msg.sender),
+            name,
+            description,
+            category,
+            rentalPrice,
+            deposit,
+            true,
+            block.timestamp
+        );
+
         emit ItemRegistered(_itemCounter, msg.sender, name, category, rentalPrice, deposit);
         return _itemCounter;
     }
@@ -267,6 +311,7 @@ contract RentalSystem is Ownable, ReentrancyGuard {
     function createRental(uint256 itemId, uint256 durationInDays) external payable nonReentrant returns (uint256) {
         require(itemId > 0 && itemId <= _itemCounter, "Invalid item ID");
         require(durationInDays > 0, "Duration must be at least 1 day");
+
         Item storage item = items[itemId];
         require(item.available, "Item is currently not available for rent");
         require(item.owner != msg.sender, "Owner cannot rent own item");
@@ -364,111 +409,88 @@ contract RentalSystem is Ownable, ReentrancyGuard {
 
 ---
 
-## 6. ขั้นตอนการสร้าง ติดตั้ง และเริ่มใช้งานระบบ (Step-by-Step Setup Guide)
+## 6. ฟีเจอร์หลักและการทำงานของระบบ (Core Features)
 
-### 📌 สิ่งที่ต้องมีก่อนเริ่ม (Prerequisites)
-1. **Node.js**: เวอร์ชัน 18.x ขึ้นไป (แนะนำ Node 20 หรือ 22)
-2. **Git**: สำหรับการ Clone หรือจัดการซอร์สโค้ด
-3. **MetaMask Extension**: ติดตั้งบนเบราว์เซอร์ (Chrome, Brave, Edge, Firefox)
-4. **เหรียญ Sepolia ETH**: ขอรับได้ฟรีผ่าน Google Sepolia Faucet หรือ Alchemy Faucet เพื่อใช้จ่ายค่า Gas
+1. **การค้นหาและกรองทรัพย์สิน (Search & Filter):** ค้นหาตามชื่อ คำบรรยาย ที่อยู่เจ้าของ และกรองตามหมวดหมู่ หรือสถานะความพร้อมให้เช่า
+2. **ระบบคิดราคาและ Escrow แบบเรียลไทม์ (Live Pricing & Escrow Calculator):** คำนวณค่าเช่าตามจำนวนวัน รวมกับเงินมัดจำความเสียหายอัตโนมัติ
+3. **การคืนทรัพย์สินพร้อมรับมัดจำคืนทันที (Instant Deposit Refund):** ผู้เช่ากดปุ่ม "คืนทรัพย์สิน" เพื่อกระตุ้นให้ Smart Contract คืนเงินมัดจำกลับเข้ากระเป๋าทันทีโดยไม่มีการหักค่าใช้จ่ายแอบแฝง
+4. **การลงทะเบียนทรัพย์สินใหม่ (Asset Registration):** เจ้าของสามารถเพิ่มรายการทรัพย์สินของตนเองขึ้นสู่บล็อกเชนได้โดยตรง โดยผู้ลงทะเบียนจะถูกบันทึกเป็น Owner อย่างถาวร
+5. **การจัดการทรัพย์สินโดยเจ้าของ (Owner Asset Control):** สามารถเปิดหรือพักการให้เช่า (Available / Unavailable) ได้ผ่าน Smart Contract
+6. **หน้าตรวจสอบความโปร่งใสของสัญญา (/claims):** ตรวจสอบรหัสสัญญาเช่า ดูยอดเงินมัดจำที่ถูกล็อกอยู่ เวลาเริ่ม-สิ้นสุด และที่อยู่กระเป๋าคู่สัญญาแบบ On-Chain 100%
+7. **แดชบอร์ดสถิติระบบ (/dashboard):** แสดงสถิติจำนวนทรัพย์สินทั้งหมด จำนวนสัญญาที่เกิดขึ้น และประวัติธุรกรรมแบบเรียลไทม์
+8. **ระบบตรวจจับข้อผิดพลาดอัจฉริยะ (Smart Error Handling):** แปลง Error Code ของบล็อกเชนให้เป็นข้อความภาษาไทยที่เข้าใจง่าย เช่น ยอดเงินไม่พอ หรือกระเป๋าไม่อยู่บน Sepolia
 
 ---
 
-### ขั้นตอนที่ 1: ติดตั้ง Dependencies
-เปิด Terminal (Command Prompt หรือ PowerShell) แล้วเข้าไปที่โฟลเดอร์โปรเจกต์:
-```bash
-# 1. เข้าสู่ไดเรกทอรีโปรเจกต์
-cd d:\BlockChain\Project\digital-rental
+## 7. ขั้นตอนการติดตั้งและเริ่มใช้งาน (Setup Guide)
 
-# 2. ติดตั้งแพ็กเกจไลบรารี
+### 📌 สิ่งที่ต้องเตรียม (Prerequisites)
+1. **Node.js**: เวอร์ชัน 18.x ขึ้นไป (แนะนำ Node 20 หรือ Node 22)
+2. **Git**: สำหรับดึงโค้ดและจัดการเวอร์ชัน
+3. **MetaMask Extension**: ติดตั้งบนเบราว์เซอร์
+4. **Sepolia ETH**: ขอรับเหรียญทดสอบฟรีได้จาก [Google Sepolia Faucet](https://cloud.google.com/application/web3/faucet/ethereum/sepolia) หรือ [Alchemy Faucet](https://www.alchemy.com/faucets/ethereum-sepolia)
+
+### 🚀 ขั้นตอนการติดตั้งและรัน
+```bash
+# 1. Clone repository
+git clone https://github.com/Kitikon15/Blockchain-Rental-System-DApp.git
+cd Blockchain-Rental-System-DApp/digital-rental
+
+# 2. ติดตั้ง Dependencies
 npm install
-```
 
----
+# 3. ตรวจสอบไฟล์ .env.local ว่ามีข้อมูลครบถ้วน:
+# NEXT_PUBLIC_CONTRACT_ADDRESS=0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861
+# NEXT_PUBLIC_CHAIN_ID=11155111
+# NEXT_PUBLIC_NETWORK_NAME=Sepolia
+# NEXT_PUBLIC_EXPLORER_URL=https://sepolia.etherscan.io
+# NEXT_PUBLIC_RPC_URL=https://rpc.sepolia.org
 
-### ขั้นตอนที่ 2: ตั้งค่า Environment Variables (`.env.local`)
-ตรวจสอบหรือสร้างไฟล์ `.env.local` ภายในโฟลเดอร์ `digital-rental/` ดังนี้:
-
-```env
-# ที่อยู่ Smart Contract ที่ Deploy บน Sepolia
-NEXT_PUBLIC_CONTRACT_ADDRESS=0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861
-
-# รหัสเครือข่าย Ethereum Sepolia Testnet
-NEXT_PUBLIC_CHAIN_ID=11155111
-NEXT_PUBLIC_NETWORK_NAME=Sepolia
-
-# Block Explorer & RPC Gateway
-NEXT_PUBLIC_EXPLORER_URL=https://sepolia.etherscan.io
-NEXT_PUBLIC_RPC_URL=https://rpc.sepolia.org
-```
-
----
-
-### ขั้นตอนที่ 3: เริ่มต้น Local Development Server
-รันคำสั่งเพื่อสตาร์ต Next.js Dev Server:
-```bash
+# 4. สตาร์ต Development Server
 npm run dev
 ```
-เมื่อหน้าจอขึ้นข้อความ:
-```text
-▲ Next.js 14.2.15
-- Local: http://localhost:3000
-✓ Ready in 4.5s
-```
-ให้เปิดเบราว์เซอร์ไปที่: 👉 **[http://localhost:3000](http://localhost:3000)**
+
+เปิดเบราว์เซอร์แล้วเข้าไปที่: 👉 **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
-### ขั้นตอนที่ 4: เชื่อมต่อ MetaMask และเข้าสู่ Sepolia Testnet
-1. คลิกปุ่ม **"เชื่อมต่อกระเป๋า" (Connect Wallet)** ที่มุมขวาบนของหน้าเว็บ
-2. หน้าต่าง MetaMask จะเด้งขึ้นมา ให้เลือกบัญชีกระเป๋าแล้วกด **"Next"** และ **"Connect"**
-3. หากกระเป๋าของคุณไม่ได้อยู่บนเครือข่าย Sepolia ระบบจะขึ้นปุ่มเตือน **"เปลี่ยนไปใช้เครือข่าย Sepolia" (Switch to Sepolia)** โดยอัตโนมัติ
+## 8. คู่มือการทดสอบการใช้งานทีละสเต็ป (Testing Guide)
+
+### 🛒 สเต็ปที่ 1: การเช่าของ (Rent an Item)
+1. เปิดหน้าเว็บ [http://localhost:3000/rentals](http://localhost:3000/rentals)
+2. กดปุ่ม **"เชื่อมต่อกระเป๋า"** ด้านบน และสลับเครือข่ายเป็น **Sepolia**
+3. เลือกทรัพย์สินที่ต้องการ (เช่น กีตาร์ **Item #7** หรือ กล้อง **Item #2**) แล้วกด **"เช่าทันที"**
+4. ระบุจำนวนวันที่ต้องการเช่า (เช่น 1 วัน) แล้วกด **"ยืนยันและชำระเงิน"**
+5. หน้าต่าง MetaMask จะเด้งขึ้นมา ให้กด **"ยืนยัน (Confirm)"**
+6. เมื่อบล็อกเชนประมวลผลเสร็จ หน้าจอจะขึ้นข้อความสำเร็จพร้อมลิงก์ Tx Hash
+
+### 📦 สเต็ปที่ 2: การคืนของและรับเงินมัดจำคืน (Return Item & Get Deposit)
+1. ไปที่เมนู **"การเช่าของฉัน" ([/my-rentals](http://localhost:3000/my-rentals))**
+2. รายการที่คุณเพิ่งเช่าจะแสดงสถานะ **กำลังเช่า (Active)**
+3. คลิกปุ่ม **"คืนทรัพย์สิน"** แล้วกดยืนยันใน MetaMask
+4. Smart Contract จะปลดล็อกเงินมัดจำโอนคืนเข้ากระเป๋าของคุณทันที และสถานะจะเปลี่ยนเป็น **คืนแล้ว (Returned)**
+
+### 🔍 สเต็ปที่ 3: การตรวจสอบสัญญาเช่าบนบล็อกเชน (Audit on /claims)
+1. ไปที่เมนู **"ตรวจสอบสัญญา" ([/claims](http://localhost:3000/claims))**
+2. คลิกปุ่มตัวอย่าง เช่น **`[ #101 ]`** หรือ **`[ #102 ]`** หรือกรอกเลขรหัสสัญญาที่คุณเช่า
+3. กดปุ่ม **"ตรวจสอบบนบล็อกเชน"** เพื่อดูข้อมูลสถานะเงินมัดจำและคู่สัญญาแบบสดจากบล็อกเชน
 
 ---
 
-## 7. คู่มือการทดสอบการใช้งานหลัก (User Testing & Workflow Guide)
+## 9. ความปลอดภัยและการตรวจสอบสัญญา (Security & Best Practices)
 
-### 🧪 1. การเช่าทรัพย์สิน (Rent Asset Workflow)
-1. ไปที่เมนู **"ค้นหาของเช่า" (`/rentals`)**
-2. เลือกทรัพย์สินที่สนใจ (เช่น **Item #7: Taylor 214ce Guitar** หรือ **Item #4: Segway Scooter**)
-3. คลิกปุ่ม **"เช่าทันที"**
-4. ในหน้าต่าง Modal ให้ระบุจำนวนวันที่ต้องการเช่า (ระบบจะคำนวณค่าเช่ารวมเงินมัดจำ Escrow ให้แบบเรียลไทม์)
-5. คลิกปุ่ม **"ยืนยันและชำระเงิน"**
-6. **MetaMask** จะเด้งขึ้นมาให้คุณตรวจสอบและกดยืนยัน (Confirm)
-7. เมื่อธุรกรรมได้รับการยืนยันบนบล็อกเชน ระบบจะแสดง **Transaction Hash** พร้อมเปลี่ยนสถานะเป็น **"ทำสัญญาเช่าสำเร็จ"**
-
-### 📦 2. การตรวจสอบประวัติและคืนของเพื่อรับมัดจำคืน (Return Item & Deposit Refund)
-1. ไปที่เมนู **"รายการที่ฉันเช่า" (`/my-rentals`)**
-2. คุณจะพบรายการทรัพย์สินที่คุณเพิ่งทำสัญญาเช่าแสดงสถานะ **Active (กำลังเช่า)**
-3. เมื่อต้องการคืนของ ให้คลิกปุ่ม **"คืนทรัพย์สิน" (Return Item)**
-4. กดยืนยันธุรกรรมใน MetaMask
-5. Smart Contract จะทำการปลดล็อกเงินมัดจำ (Deposit Refund) และโอนคืนเข้ากระเป๋าของคุณทันที พร้อมอัปเดตสถานะเป็น **Returned (คืนแล้ว)**
-
-### ➕ 3. การลงทะเบียนทรัพย์สินใหม่ขึ้น Smart Contract (Register Asset Workflow)
-1. ไปที่เมนู **"ลงทะเบียนทรัพย์สิน" (`/register`)**
-2. กรอกรายละเอียด:
-   * **ชื่อทรัพย์สิน**: เช่น `DJI Pocket 3 Creator Combo`
-   * **หมวดหมู่**: กล้องและอุปกรณ์มีเดีย
-   * **รายละเอียด**: บันทึกวิดีโอ 4K 120fps เซ็นเซอร์ 1 นิ้ว
-   * **ราคาเช่าต่อวัน**: `0.01` ETH
-   * **เงินมัดจำประกัน**: `0.02` ETH
-3. คลิกปุ่ม **"ลงทะเบียนทรัพย์สินบนบล็อกเชน"**
-4. กดยืนยันใน MetaMask ➔ ข้อมูลจะถูกเขียนลงใน Smart Contract บน Sepolia ทันที และจะไปปรากฏในหน้า **"ค้นหาของเช่า"** และ **"จัดการของให้เช่า" (`/owner`)**
+* **OpenZeppelin ReentrancyGuard**: ป้องกันการโจมตี Reentrancy ในทุกฟังก์ชันที่มีการโอนเงิน ETH ด้วย Modifier `nonReentrant`
+* **Checks-Effects-Interactions**: ตรวจสอบเงื่อนไข (`require`) และเปลี่ยนแปลงสถานะสัญญาก่อนการส่งโอน ETH เสมอ
+* **Owner Self-Rental Prevention**: สัญญามีคำสั่ง `require(item.owner != msg.sender)` ป้องกันเจ้าของจ่ายเงินเช่าของตัวเอง
+* **Strict Non-Zero Handling**: ป้องกันการดึงค่า struct ที่ยังไม่ถูกกำหนดค่าใน Solidity mapping บน EVM
+* **EIP-1193 Listeners**: มีระบบตรวจจับการสลับบัญชี (`accountsChanged`) และสลับเชน (`chainChanged`) ใน MetaMask โดยอัตโนมัติ
 
 ---
 
-## 8. มาตรฐานความปลอดภัยและความน่าเชื่อถือ (Security & Best Practices)
+## 10. ข้อมูลสัญญาและผู้พัฒนา (Credits)
 
-* **OpenZeppelin ReentrancyGuard**: ป้องกันการโจมตีประเภท Reentrancy ในฟังก์ชันที่มีการโอนเหรียญ ETH (`createRental`, `returnItem`, `cancelRental`) ด้วย Modifier `nonReentrant`
-* **Checks-Effects-Interactions Pattern**: ทุกฟังก์ชันจะทำการตรวจสอบเงื่อนไข (`require`) และอัปเดตสถานะภายในสัญญาก่อนที่จะทำธุรกรรมภายนอก
-* **EIP-1193 & Account Change Listener**: มีระบบตรวจจับเมื่อผู้ใช้สลับบัญชีใน MetaMask (`accountsChanged`) หรือสลับ Network (`chainChanged`) และอัปเดตหน้าเว็บใหม่อัตโนมัติ
-* **React Portal Stacking Context Fix**: ตัว Modal ทำงานผ่าน `createPortal(..., document.body)` ป้องกันการถูกกลืนหรือทับด้วย CSS Backdrop Filter ของ Navbar
-* **Smart Hybrid Architecture**: ผสานการทำงานระหว่างสัญญาบนบล็อกเชนจริงเข้ากับชุดข้อมูลจำลอง (Pre-seeded Catalog) ทำให้ระบบมีความสมบูรณ์ สวยงาม พร้อมสำหรับการนำเสนอผลงานและประเมินผลโครงการวิชาการ
-
----
-
-### 👨‍💻 พัฒนาและดูแลโดย
-* **Project**: Blockchain-Based Rental System (BlockRental)
-* **Academic Capstone Project**: Decentralized Application (Web3 DApp)
-* **Blockchain**: Ethereum Sepolia Testnet
+* **ชื่อโปรเจกต์**: Blockchain-Based Rental System (BlockRental)
+* **ประเภท**: Decentralized Web3 Application (DApp)
+* **เครือข่ายบล็อกเชน**: Ethereum Sepolia Testnet (Chain ID: `11155111`)
 * **Smart Contract Address**: [`0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
+* **GitHub Repository**: [https://github.com/Kitikon15/Blockchain-Rental-System-DApp](https://github.com/Kitikon15/Blockchain-Rental-System-DApp)
