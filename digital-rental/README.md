@@ -18,7 +18,7 @@
 2. [Tech Stack & Frameworks ทั้งหมดอย่างละเอียด (Technology Stack)](#2-tech-stack--frameworks-ทั้งหมดอย่างละเอียด-technology-stack)
 3. [สถาปัตยกรรมและองค์ประกอบของระบบ (System Architecture & Data Flow)](#3-สถาปัตยกรรมและองค์ประกอบของระบบ-system-architecture--data-flow)
 4. [โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory & Component Structure)](#4-โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด-directory-structure)
-5. [Smart Contract & ซอร์สโค้ดสัญญาอัจฉริยะ (Smart Contract & Solidity Code)](#5-smart-contract--ซอร์สโค้ดสัญญาอัจฉริยะ-solidity-code)
+5. [สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)](#5-สถาปัตยกรรมและรายละเอียด-smart-contract-smart-contract-specifications)
 6. [ฟีเจอร์หลักและการทำงานของระบบ (Core Features & Functionalities)](#6-ฟีเจอร์หลักและการทำงานของระบบ-core-features)
 7. [ขั้นตอนการติดตั้งและเริ่มใช้งาน (Step-by-Step Installation & Setup Guide)](#7-ขั้นตอนการติดตั้งและเริ่มใช้งาน-setup-guide)
 8. [คู่มือการทดสอบการใช้งานทีละสเต็ป (Step-by-Step Testing & User Guide)](#8-คู่มือการทดสอบการใช้งานทีละสเต็ป-testing-guide)
@@ -101,7 +101,7 @@ flowchart TD
 
     subgraph BlockchainNetwork ["3. บล็อกเชน Ethereum Sepolia Testnet"]
         SepoliaRPC["Ethereum Sepolia RPC Node\n(https://rpc.sepolia.org)"]
-        SmartContract["RentalSystem.sol Smart Contract\nAddress: 0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861"]
+        SmartContract["RentalSystem.sol Smart Contract\nAddress: 0xa0F7a17b...5861"]
         Etherscan["Sepolia Etherscan Block Explorer"]
     end
 
@@ -202,210 +202,32 @@ Blockchain-Rental-System-DApp/
 
 ---
 
-## 5. Smart Contract & ซอร์สโค้ดสัญญาอัจฉริยะ (Solidity Code)
+## 5. สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)
 
 ### 📌 ข้อมูลการ Deploy จริงบน Sepolia Testnet
 * **ชื่อสัญญา (Contract Name)**: `RentalSystem`
 * **เครือข่ายบล็อกเชน (Network)**: Ethereum Sepolia Testnet
 * **Chain ID**: `11155111` (Hex: `0xaa36a7`)
 * **Contract Address**: [`0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
-* **Compiler**: Solidity `^0.8.20` / Optimization Enabled (200 runs)
+* **Compiler Version**: Solidity `^0.8.20`
+* **Security Standards**: OpenZeppelin `Ownable`, `ReentrancyGuard`
 
-### 📜 ซอร์สโค้ดสัญญาอัจฉริยะฉบับสมบูรณ์ (`RentalSystem.sol`)
+### ⚙️ โครงสร้างข้อมูลและฟังก์ชันหลักของสัญญา (Contract Interface & Specifications)
 
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+Smart Contract ถูกออกแบบตามมาตรฐานความปลอดภัยระดับสากล มีโครงสร้างและอินเทอร์เฟซหลักดังนี้:
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+| ฟังก์ชัน (Function) | สิทธิ์การเรียก (Access Control) | หน้าที่และการทำงาน (Description) |
+|---|---|---|
+| `registerItem(name, desc, category, price, deposit)` | เจ้าของทรัพย์สิน (Owner) | บันทึกทรัพย์สินใหม่ขึ้นสู่บล็อกเชน กำหนดค่าเช่ารายวันและเงินมัดจำประกันความเสียหาย |
+| `updateItemAvailability(itemId, available)` | เจ้าของทรัพย์สิน (Owner) | สลับสถานะเปิดให้เช่า หรือพักการให้เช่าทรัพย์สินชั่วคราว |
+| `createRental(itemId, durationInDays)` | ผู้เช่า (Renter, Payable) | ชำระค่าเช่ารวมเงินมัดจำ Escrow โอนค่าเช่าให้เจ้าของ และล็อกมัดจำไว้ในสัญญา |
+| `returnItem(rentalId)` | ผู้เช่า (Renter) | ยืนยันการคืนของ และกระตุ้นให้สัญญาโอนคืนเงินมัดจำ Escrow กลับสู่ผู้เช่าอัตโนมัติ 100% |
+| `cancelRental(rentalId)` | คู่สัญญา (Owner / Renter) | ยกเลิกสัญญาเช่าและคืนเงินมัดจำในกรณีเกิดข้อขัดแย้ง |
+| `getAllItems()` / `getAllRentals()` | สาธารณะ (View / Free) | ฟังก์ชันอ่านข้อมูลทรัพย์สินและสัญญาเช่าทั้งหมดในคำสั่งเดียวแบบ Batch |
+| `getItemCount()` / `getRentalCount()` | สาธารณะ (View / Free) | อ่านจำนวนทรัพย์สินและสัญญาเช่าสะสมทั้งหมดบนบล็อกเชน |
 
-/**
- * @title RentalSystem
- * @dev สัญญาอัจฉริยะสำหรับการบริหารจัดการการเช่าทรัพย์สินแบบกระจายศูนย์
- * มีระบบ Escrow สำหรับเงินมัดจำประกันความเสียหาย และป้องกันการโจมตี Reentrancy
- */
-contract RentalSystem is Ownable, ReentrancyGuard {
-    enum RentalStatus { None, Active, Returned, Cancelled }
-
-    struct Item {
-        uint256 itemId;
-        address payable owner;
-        string name;
-        string description;
-        string category;
-        uint256 rentalPrice; // ราคาเช่าต่อวัน (Wei)
-        uint256 deposit;     // เงินมัดจำประกันความเสียหาย (Wei)
-        bool available;      // สถานะพร้อมให้เช่า
-        uint256 createdAt;   // เวลาที่ลงทะเบียน (Timestamp)
-    }
-
-    struct RentalAgreement {
-        uint256 rentalId;
-        uint256 itemId;
-        address payable owner;
-        address payable renter;
-        uint256 startTime;
-        uint256 endTime;
-        uint256 rentalPrice;
-        uint256 deposit;
-        uint256 totalPaid;
-        RentalStatus status;
-        uint256 createdAt;
-    }
-
-    uint256 private _itemCounter;
-    uint256 private _rentalCounter;
-
-    mapping(uint256 => Item) public items;
-    mapping(uint256 => RentalAgreement) public rentals;
-
-    event ItemRegistered(uint256 indexed itemId, address indexed owner, string name, string category, uint256 rentalPrice, uint256 deposit);
-    event ItemAvailabilityUpdated(uint256 indexed itemId, bool available);
-    event RentalCreated(uint256 indexed rentalId, uint256 indexed itemId, address indexed renter, uint256 startTime, uint256 endTime, uint256 totalPaid, uint256 deposit);
-    event ItemReturned(uint256 indexed rentalId, uint256 indexed itemId, address indexed renter, uint256 returnedTime, uint256 depositRefunded);
-    event RentalCancelled(uint256 indexed rentalId, uint256 indexed itemId, address indexed renter, uint256 refundAmount);
-
-    constructor() Ownable(msg.sender) {}
-
-    function getItemCount() external view returns (uint256) { return _itemCounter; }
-    function getRentalCount() external view returns (uint256) { return _rentalCounter; }
-
-    // 1. ลงทะเบียนทรัพย์สินใหม่ (Owner)
-    function registerItem(
-        string calldata name,
-        string calldata description,
-        string calldata category,
-        uint256 rentalPrice,
-        uint256 deposit
-    ) external returns (uint256) {
-        require(bytes(name).length > 0, "Item name cannot be empty");
-        require(rentalPrice > 0, "Rental price must be greater than zero");
-
-        _itemCounter++;
-        items[_itemCounter] = Item(
-            _itemCounter,
-            payable(msg.sender),
-            name,
-            description,
-            category,
-            rentalPrice,
-            deposit,
-            true,
-            block.timestamp
-        );
-
-        emit ItemRegistered(_itemCounter, msg.sender, name, category, rentalPrice, deposit);
-        return _itemCounter;
-    }
-
-    // 2. ปิด/เปิด สถานะการให้เช่า (Owner)
-    function updateItemAvailability(uint256 itemId, bool available) external {
-        require(itemId > 0 && itemId <= _itemCounter, "Invalid item ID");
-        require(items[itemId].owner == msg.sender, "Only owner can update availability");
-        items[itemId].available = available;
-        emit ItemAvailabilityUpdated(itemId, available);
-    }
-
-    // 3. ทำสัญญาเช่าและชำระเงิน Escrow (Renter)
-    function createRental(uint256 itemId, uint256 durationInDays) external payable nonReentrant returns (uint256) {
-        require(itemId > 0 && itemId <= _itemCounter, "Invalid item ID");
-        require(durationInDays > 0, "Duration must be at least 1 day");
-
-        Item storage item = items[itemId];
-        require(item.available, "Item is currently not available for rent");
-        require(item.owner != msg.sender, "Owner cannot rent own item");
-
-        uint256 totalRentalFee = item.rentalPrice * durationInDays;
-        uint256 totalCost = totalRentalFee + item.deposit;
-        require(msg.value >= totalCost, "Insufficient payment for rental + deposit");
-
-        _rentalCounter++;
-        uint256 startTime = block.timestamp;
-        uint256 endTime = block.timestamp + (durationInDays * 1 days);
-
-        rentals[_rentalCounter] = RentalAgreement(
-            _rentalCounter,
-            itemId,
-            item.owner,
-            payable(msg.sender),
-            startTime,
-            endTime,
-            item.rentalPrice,
-            item.deposit,
-            msg.value,
-            RentalStatus.Active,
-            block.timestamp
-        );
-
-        item.available = false;
-
-        // โอนค่าเช่าให้เจ้าของทรัพย์สินทันที
-        (bool feeTransferSuccess, ) = item.owner.call{value: totalRentalFee}("");
-        require(feeTransferSuccess, "Rental fee transfer to owner failed");
-
-        // เงินมัดจำ (item.deposit) จะคงอยู่ใน Contract Escrow จนกว่าจะมีการกดคืนของ
-        emit RentalCreated(_rentalCounter, itemId, msg.sender, startTime, endTime, msg.value, item.deposit);
-        return _rentalCounter;
-    }
-
-    // 4. คืนทรัพย์สินและรับเงินมัดจำคืนอัตโนมัติ (Renter)
-    function returnItem(uint256 rentalId) external nonReentrant {
-        require(rentalId > 0 && rentalId <= _rentalCounter, "Invalid rental ID");
-        RentalAgreement storage agreement = rentals[rentalId];
-        require(agreement.renter == msg.sender, "Only renter can trigger return");
-        require(agreement.status == RentalStatus.Active, "Rental agreement is not active");
-
-        agreement.status = RentalStatus.Returned;
-        items[agreement.itemId].available = true;
-
-        // คืนเงินมัดจำให้ผู้เช่าอัตโนมัติจาก Escrow
-        uint256 depositRefund = agreement.deposit;
-        if (depositRefund > 0) {
-            (bool refundSuccess, ) = agreement.renter.call{value: depositRefund}("");
-            require(refundSuccess, "Deposit refund failed");
-        }
-
-        emit ItemReturned(rentalId, agreement.itemId, msg.sender, block.timestamp, depositRefund);
-    }
-
-    // 5. ยกเลิกสัญญาเช่า (กรณีข้อพิพาทหรือยกเลิก)
-    function cancelRental(uint256 rentalId) external nonReentrant {
-        require(rentalId > 0 && rentalId <= _rentalCounter, "Invalid rental ID");
-        RentalAgreement storage agreement = rentals[rentalId];
-        require(agreement.renter == msg.sender || agreement.owner == msg.sender, "Not authorized to cancel");
-        require(agreement.status == RentalStatus.Active, "Rental agreement is not active");
-
-        agreement.status = RentalStatus.Cancelled;
-        items[agreement.itemId].available = true;
-
-        uint256 refundAmount = agreement.deposit;
-        if (refundAmount > 0) {
-            (bool refundSuccess, ) = agreement.renter.call{value: refundAmount}("");
-            require(refundSuccess, "Refund failed");
-        }
-
-        emit RentalCancelled(rentalId, agreement.itemId, agreement.renter, refundAmount);
-    }
-
-    // 6. ฟังก์ชันอ่านข้อมูลทั้งหมดแบบ Batch (View)
-    function getAllItems() external view returns (Item[] memory) {
-        Item[] memory allItems = new Item[](_itemCounter);
-        for (uint256 i = 1; i <= _itemCounter; i++) {
-            allItems[i - 1] = items[i];
-        }
-        return allItems;
-    }
-
-    function getAllRentals() external view returns (RentalAgreement[] memory) {
-        RentalAgreement[] memory allRentals = new RentalAgreement[](_rentalCounter);
-        for (uint256 i = 1; i <= _rentalCounter; i++) {
-            allRentals[i - 1] = rentals[i];
-        }
-        return allRentals;
-    }
-}
-```
+> [!NOTE]
+> การติดต่อและเรียกใช้ฟังก์ชัน Smart Contract ทั้งหมดผ่านหน้าเว็บ ถูกเชื่อมต่อด้วย ABI มาตรฐานที่ไฟล์ `abi/RentalSystem.json` โดยทำงานผ่าน `ethers.js v6` บนเครือข่าย Ethereum Sepolia
 
 ---
 
