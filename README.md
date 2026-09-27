@@ -313,6 +313,4 @@ npm run dev
 
 * **ชื่อโปรเจกต์**: Blockchain-Based Rental System (BlockRental)
 * **ประเภท**: Decentralized Web3 Application (DApp)
-* **เครือข่ายบล็อกเชน**: Ethereum Sepolia Testnet (Chain ID: `11155111`)
-* **Smart Contract Address**: [`0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
 * **GitHub Repository**: [https://github.com/Kitikon15/Blockchain-Rental-System-DApp](https://github.com/Kitikon15/Blockchain-Rental-System-DApp)
