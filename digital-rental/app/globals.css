@@ -1,0 +1,260 @@
+/* Blockchain-Based Rental System Modern Web3 Styling */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-navy: #09192f;
+  --navy-card: #0d213a;
+  --primary-blue: #0284c7;
+  --accent-cyan: #38bdf8;
+  --accent-teal: #10b981;
+  --bg-light: #f8fafc;
+  --card-bg: #ffffff;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+}
+
+body {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  font-family: 'Prompt', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Main Content Wrapper */
+main {
+  flex: 1 0 auto;
+}
+
+/* Footer Styling */
+footer {
+  flex-shrink: 0;
+}
+
+/* Custom Navbar Navy Gradient */
+.navbar-web3 {
+  background: linear-gradient(135deg, #071527 0%, #0d233f 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.navbar-web3 .navbar-brand {
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+}
+
+/* Nav links - horizontal nowrap, no ugly line wraps */
+.navbar-web3 .nav-link {
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.88rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.navbar-web3 .nav-link:hover {
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.1);
+}
+
+.navbar-web3 .nav-link.active {
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.15);
+  font-weight: 600;
+}
+
+/* Language Switcher Pill */
+.lang-switcher {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.lang-btn {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.lang-btn.active {
+  background: #38bdf8;
+  color: #09192f;
+  box-shadow: 0 2px 6px rgba(56, 189, 248, 0.4);
+}
+
+.lang-btn:hover:not(.active) {
+  color: #ffffff;
+}
+
+/* Wallet Chip */
+.wallet-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.2rem 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Hero Section */
+.hero-gradient {
+  background: linear-gradient(135deg, #071527 0%, #0d2b4d 50%, #0369a1 100%);
+  color: #ffffff;
+  padding: 4.5rem 0 3.75rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-gradient::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 85% 25%, rgba(56, 189, 248, 0.18) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.hero-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.1rem;
+  }
+}
+
+/* Smart Contract State Glass Card */
+.glass-card {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+/* Clean Cards */
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -6px rgba(15, 23, 42, 0.09), 0 6px 12px -4px rgba(15, 23, 42, 0.05);
+  border-color: #cbd5e1;
+}
+
+/* Step / Workflow Visuals */
+.workflow-step {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+  transition: all 0.25s ease;
+  height: 100%;
+}
+
+.workflow-step:hover {
+  border-color: #38bdf8;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(56, 189, 248, 0.15);
+}
+
+.workflow-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: #f0f9ff;
+  color: #0284c7;
+  font-size: 1.5rem;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.workflow-step:hover .workflow-icon {
+  transform: scale(1.08);
+}
+
+/* Pulse animation for live blockchain status */
+.pulse-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Address Pills */
+.address-pill {
+  font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  color: #334155;
+}
+
+/* Banner Notification */
+.setup-banner {
+  background: linear-gradient(90deg, #0c2340 0%, #13335a 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  color: #e2e8f0;
+  font-size: 0.88rem;
+}
+
+.setup-banner code {
+  color: #38bdf8;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}

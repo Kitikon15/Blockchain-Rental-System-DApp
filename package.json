@@ -1,0 +1,11 @@
+{
+  "name": "blockchain-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blockchain-Based Rental System Root Repository",
+  "scripts": {
+    "dev": "npm --prefix digital-rental run dev",
+    "build": "npm --prefix digital-rental run build",
+    "start": "npm --prefix digital-rental run start"
+  }
+}
