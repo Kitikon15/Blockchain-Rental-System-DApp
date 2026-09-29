@@ -13,7 +13,8 @@ import { RENTAL_STATUS, DEFAULT_EXPLORER_URL } from '../../lib/constants';
 import Loading from '../../components/Loading';
 import ErrorMessage from '../../components/ErrorMessage';
 import RentalStatus from '../../components/RentalStatus';
-import { formatAddress } from '../../lib/wallet';
+import RentalCountdown from '../../components/RentalCountdown';
+import { formatAddress, formatDateTime } from '../../lib/wallet';
 
 /**
  * Dashboard Page (app/dashboard/page.js)
@@ -68,9 +69,16 @@ export default function DashboardPage() {
     }
   }, [contractConfigured, account]);
 
+  const [autoSync, setAutoSync] = useState(true);
+
   useEffect(() => {
     loadBlockchainData();
-  }, [loadBlockchainData]);
+    if (!autoSync) return;
+    const interval = setInterval(() => {
+      loadBlockchainData();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [loadBlockchainData, autoSync]);
 
   // Derived metrics
   const totalItems = items.length;
@@ -78,6 +86,9 @@ export default function DashboardPage() {
   const activeRentals = rentals.filter((r) => r.status === RENTAL_STATUS.ACTIVE).length;
   const completedRentals = rentals.filter(
     (r) => r.status === RENTAL_STATUS.RETURNED || r.status === RENTAL_STATUS.COMPLETED
+  ).length;
+  const cancelledRentals = rentals.filter(
+    (r) => r.status === RENTAL_STATUS.CANCELLED
   ).length;
 
   const myRentalsCount = account
@@ -97,6 +108,9 @@ export default function DashboardPage() {
     if (historyFilter === 'ACTIVE') matchesStatus = r.status === RENTAL_STATUS.ACTIVE;
     if (historyFilter === 'RETURNED') {
       matchesStatus = r.status === RENTAL_STATUS.RETURNED || r.status === RENTAL_STATUS.COMPLETED;
+    }
+    if (historyFilter === 'CANCELLED') {
+      matchesStatus = r.status === RENTAL_STATUS.CANCELLED;
     }
     if (historyFilter === 'MY_TRANSACTIONS' && account) {
       matchesStatus =
@@ -130,14 +144,30 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <button
-          onClick={loadBlockchainData}
-          disabled={loading || !contractConfigured}
-          className="btn btn-outline-secondary btn-sm d-flex align-items-center rounded-3"
-        >
-          <i className={`bi bi-arrow-clockwise me-1 ${loading ? 'spin' : ''}`}></i>
-          {t('dashboard.refreshBtn')}
-        </button>
+        <div className="d-flex flex-wrap align-items-center gap-2">
+          <div className="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill small d-flex align-items-center gap-1.5 shadow-xs">
+            <span className="spinner-grow spinner-grow-sm text-success" style={{ width: '8px', height: '8px' }} role="status"></span>
+            <span>{language === 'th' ? 'ซิงค์สด Real-Time จาก Sepolia' : 'Live Real-Time from Sepolia'}</span>
+          </div>
+
+          <button
+            onClick={() => setAutoSync(!autoSync)}
+            className={`btn btn-sm ${autoSync ? 'btn-outline-success' : 'btn-outline-secondary'} rounded-pill`}
+            title={language === 'th' ? 'เปิด/ปิดการดึงข้อมูลอัตโนมัติ' : 'Toggle live auto-refresh'}
+          >
+            <i className={`bi ${autoSync ? 'bi-check2-circle' : 'bi-pause-circle'} me-1`}></i>
+            {language === 'th' ? (autoSync ? 'Auto-Sync: เปิด' : 'Auto-Sync: พัก') : (autoSync ? 'Auto-Sync: On' : 'Paused')}
+          </button>
+
+          <button
+            onClick={loadBlockchainData}
+            disabled={loading || !contractConfigured}
+            className="btn btn-outline-secondary btn-sm d-flex align-items-center rounded-pill"
+          >
+            <i className={`bi bi-arrow-clockwise me-1 ${loading ? 'spin' : ''}`}></i>
+            {t('dashboard.refreshBtn')}
+          </button>
+        </div>
       </div>
 
       {/* Contract Configuration Notice */}
@@ -416,6 +446,12 @@ export default function DashboardPage() {
                 >
                   {t('common.returned')} ({completedRentals})
                 </button>
+                <button
+                  className={`btn ${historyFilter === 'CANCELLED' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  onClick={() => setHistoryFilter('CANCELLED')}
+                >
+                  {t('common.cancelled')} ({cancelledRentals})
+                </button>
               </div>
 
               <div className="input-group input-group-sm" style={{ width: '200px' }}>
@@ -462,7 +498,8 @@ export default function DashboardPage() {
                     <th>{t('dashboard.tableItemId')}</th>
                     <th>{t('common.owner')}</th>
                     <th>{t('dashboard.tableRenter')}</th>
-                    <th>{language === 'th' ? 'ระยะเวลา' : 'Timeline'}</th>
+                    <th>{language === 'th' ? 'ระยะเวลา (Timeline)' : 'Timeline'}</th>
+                    <th>{language === 'th' ? 'นับถอยหลัง Real-time' : 'Live Status'}</th>
                     <th>{t('dashboard.tableTotalPaid')}</th>
                     <th>{t('dashboard.tableDeposit')}</th>
                     <th>{t('dashboard.tableStatus')}</th>
@@ -503,18 +540,33 @@ export default function DashboardPage() {
                           </a>
                         </td>
                         <td>
-                          <span className="text-muted">
-                            {new Date(r.startTime * 1000).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')} -{' '}
-                            {new Date(r.endTime * 1000).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')}
-                          </span>
+                          <div className="font-monospace text-dark small">
+                            <div>{formatDateTime(r.startTime, language)}</div>
+                            <div className="text-muted">{formatDateTime(r.endTime, language)}</div>
+                          </div>
+                        </td>
+                        <td>
+                          <RentalCountdown
+                            endTime={r.endTime}
+                            startTime={r.startTime}
+                            status={r.status}
+                            compact={true}
+                          />
                         </td>
                         <td className="font-monospace fw-medium text-primary">{r.totalPaidEth} ETH</td>
-                        <td className="font-monospace text-success">{r.depositEth} ETH</td>
+                        <td className="font-monospace text-success">+{r.depositEth} ETH</td>
                         <td>
                           <RentalStatus status={r.status} />
                         </td>
                         <td className="text-end">
-                          <Link href={`/rentals/${r.itemId}`} className="btn btn-xs btn-outline-secondary py-1 px-2.5 rounded-pill">
+                          <Link
+                            href={`/claims?id=${r.rentalId}`}
+                            className="btn btn-xs btn-outline-info py-1 px-2 rounded-pill me-1 text-decoration-none"
+                            title={language === 'th' ? 'ตรวจสัญญา' : 'Audit'}
+                          >
+                            {language === 'th' ? 'ตรวจสัญญา' : 'Audit'}
+                          </Link>
+                          <Link href={`/rentals/${r.itemId}`} className="btn btn-xs btn-outline-secondary py-1 px-2.5 rounded-pill text-decoration-none">
                             {t('dashboard.viewItem')}
                           </Link>
                         </td>

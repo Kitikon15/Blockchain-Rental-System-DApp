@@ -321,4 +321,50 @@ export function formatEthAmount(val, decimals = 4) {
   }
 }
 
+/**
+ * Format timestamp into complete real-time date and time representation (DD/MM/YYYY HH:mm:ss)
+ */
+export function formatDateTime(val, language = 'th', includeSeconds = true) {
+  if (!val) return '-';
+  try {
+    const date = typeof val === 'number' ? new Date(val > 1e11 ? val : val * 1000) : new Date(val);
+    if (isNaN(date.getTime())) return '-';
+
+    const locale = language === 'th' ? 'th-TH' : 'en-GB';
+    return date.toLocaleString(locale, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: includeSeconds ? '2-digit' : undefined,
+      hour12: false,
+    });
+  } catch {
+    return '-';
+  }
+}
+
+/**
+ * Format relative elapsed time (e.g. "เมื่อสักครู่", "5 นาทีที่แล้ว")
+ */
+export function formatRelativeTime(val, language = 'th') {
+  if (!val) return '';
+  try {
+    const timeMs = typeof val === 'number' ? (val > 1e11 ? val : val * 1000) : new Date(val).getTime();
+    const diffSec = Math.floor((Date.now() - timeMs) / 1000);
+
+    if (diffSec < 15) return language === 'th' ? 'เมื่อสักครู่' : 'just now';
+    if (diffSec < 60) return language === 'th' ? `${diffSec} วินาทีที่แล้ว` : `${diffSec}s ago`;
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return language === 'th' ? `${diffMin} นาทีที่แล้ว` : `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return language === 'th' ? `${diffHours} ชั่วโมงที่แล้ว` : `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return language === 'th' ? `${diffDays} วันที่แล้ว` : `${diffDays}d ago`;
+  } catch {
+    return '';
+  }
+}
+
 export { formatEther, parseEther };

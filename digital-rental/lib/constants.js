@@ -39,26 +39,26 @@ export const RENTAL_STATUS_BADGES = {
   [RENTAL_STATUS.COMPLETED]: 'success',
 };
 
-// Item categories supported for browsing and registration
+// Item categories supported for browsing and registration (IT & Computing Focus)
 export const ITEM_CATEGORIES = [
+  'Laptops & Notebooks',
+  'Desktops & Workstations',
+  'Monitors & Displays',
+  'Networking & Servers',
   'Electronics & Gadgets',
-  'Vehicles & Transport',
-  'Tools & Equipment',
+  'VR & Gaming Gear',
   'Cameras & Media',
-  'Sports & Recreation',
-  'Real Estate & Spaces',
-  'Musical Instruments',
   'Other Assets',
 ];
 
 // Fallback images based on category
 export const CATEGORY_ICONS = {
-  'Electronics & Gadgets': 'bi-laptop',
-  'Vehicles & Transport': 'bi-car-front',
-  'Tools & Equipment': 'bi-tools',
-  'Cameras & Media': 'bi-camera-reels',
-  'Sports & Recreation': 'bi-bicycle',
-  'Real Estate & Spaces': 'bi-building',
-  'Musical Instruments': 'bi-music-note-beamed',
-  'Other Assets': 'bi-box-seam',
+  'Laptops & Notebooks': 'bi-laptop',
+  'Desktops & Workstations': 'bi-pc-display-horizontal',
+  'Monitors & Displays': 'bi-display',
+  'Networking & Servers': 'bi-router',
+  'Electronics & Gadgets': 'bi-motherboard',
+  'VR & Gaming Gear': 'bi-controller',
+  'Cameras & Media': 'bi-camera-video',
+  'Other Assets': 'bi-cpu',
 };

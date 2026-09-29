@@ -13,6 +13,7 @@ import {
   mergeRentalsWithSeed,
   saveUserRental,
   updateStoredRentalStatus,
+  extendRentalTime,
   saveItemAvailabilityOverride,
   getSeedItems,
 } from './seedData';
@@ -105,6 +106,12 @@ export function normalizeItem(raw) {
  */
 export function normalizeRental(raw) {
   if (!raw) return null;
+  const rawStatus = Number(raw.status ?? raw[9]);
+  // In smart contracts, enum default 0 for RentalAgreement is Active
+  let finalStatus = rawStatus;
+  if (rawStatus === 0) {
+    finalStatus = RENTAL_STATUS.ACTIVE;
+  }
   return {
     rentalId: Number(raw.rentalId ?? raw[0]),
     itemId: Number(raw.itemId ?? raw[1]),
@@ -118,7 +125,7 @@ export function normalizeRental(raw) {
     depositEth: raw.deposit !== undefined ? formatEther(raw.deposit) : formatEther(raw[7]),
     totalPaid: raw.totalPaid !== undefined ? raw.totalPaid : raw[8],
     totalPaidEth: raw.totalPaid !== undefined ? formatEther(raw.totalPaid) : formatEther(raw[8]),
-    status: Number(raw.status ?? raw[9]),
+    status: finalStatus,
     createdAt: Number(raw.createdAt ?? raw[10] ?? 0),
   };
 }
@@ -266,10 +273,38 @@ export async function registerItemOnChain({ name, description, category, rentalP
  * Automatically detects whether the item is already registered on-chain or part of the
  * pre-seeded university catalog, executing real signed Web3 transactions on Sepolia in both cases.
  */
-export async function createRentalOnChain({ itemId, durationInDays, totalEthToPay, forceDemo = false }) {
+export async function createRentalOnChain({
+  itemId,
+  durationInDays,
+  durationValue,
+  durationUnit = 'days',
+  durationInSeconds = null,
+  totalEthToPay,
+  forceDemo = false,
+}) {
   const contract = await getSignerContract();
   const signer = await getSigner();
   const userAddress = await signer.getAddress();
+
+  // Calculate duration in seconds for real-time tracking
+  let calculatedSeconds = 86400 * Number(durationInDays || 1);
+  if (durationInSeconds && Number(durationInSeconds) > 0) {
+    calculatedSeconds = Number(durationInSeconds);
+  } else if (durationUnit === 'minutes') {
+    calculatedSeconds = Math.max(10, Number(durationValue || 1) * 60);
+  } else if (durationUnit === 'hours') {
+    calculatedSeconds = Math.max(60, Number(durationValue || 1) * 3600);
+  } else if (durationValue) {
+    calculatedSeconds = Number(durationValue) * 86400;
+  }
+
+  const onChainDays = Math.max(1, Math.ceil(calculatedSeconds / 86400));
+  const durationDesc =
+    durationUnit === 'minutes'
+      ? `${durationValue || Math.round(calculatedSeconds / 60)} minutes`
+      : durationUnit === 'hours'
+      ? `${durationValue || Math.round(calculatedSeconds / 3600)} hours`
+      : `${onChainDays} days`;
 
   let onChainCount = 0;
   try {
@@ -299,33 +334,85 @@ export async function createRentalOnChain({ itemId, durationInDays, totalEthToPa
       if (checkErr.message.includes('Owner cannot rent')) throw checkErr;
     }
 
-    const tx = await contract.createRental(itemId, durationInDays, {
+    const tx = await contract.createRental(itemId, onChainDays, {
       value: totalValueWei,
     });
     const receipt = await tx.wait();
-    return { hash: tx.hash, receipt };
+
+    let createdRentalId = null;
+    try {
+      if (receipt && receipt.logs) {
+        for (const log of receipt.logs) {
+          try {
+            const parsed = contract.interface.parseLog(log);
+            if (parsed && (parsed.name === 'RentalCreated' || parsed.args?.rentalId)) {
+              createdRentalId = Number(parsed.args.rentalId ?? parsed.args[0]);
+              break;
+            }
+          } catch (_) {}
+        }
+      }
+      if (!createdRentalId && typeof contract.getRentalCount === 'function') {
+        const count = await contract.getRentalCount();
+        createdRentalId = Number(count);
+      }
+    } catch (_) {}
+
+    const finalRentalId = createdRentalId || (400 + Math.floor(Math.random() * 500));
+    const now = Math.floor(Date.now() / 1000);
+    const seedItems = mergeItemsWithSeed([], userAddress);
+    const targetItem = seedItems.find((i) => Number(i.itemId) === Number(itemId));
+
+    saveUserRental({
+      rentalId: finalRentalId,
+      itemId: Number(itemId),
+      owner: targetItem ? targetItem.owner : (CONTRACT_ADDRESS || '0x2546BcD3c84621e976D8185a91A922aE77ECEc30'),
+      renter: userAddress,
+      startTime: now,
+      endTime: now + calculatedSeconds,
+      durationUnit: durationUnit,
+      durationValue: durationValue || onChainDays,
+      rentalPriceEth: targetItem ? targetItem.rentalPriceEth : '0.0500',
+      depositEth: targetItem ? targetItem.depositEth : '0.0500',
+      totalPaidEth: String(totalEthToPay),
+      status: RENTAL_STATUS.ACTIVE,
+      createdAt: now,
+      txHash: tx.hash,
+      isOnChain: true,
+    });
+    saveItemAvailabilityOverride(Number(itemId), false);
+
+    return { hash: tx.hash, receipt, rentalId: finalRentalId };
   }
 
   // Case 2: Pre-seeded Catalog Item (Not yet on-chain) or Demo Mode
-  // Execute an authentic Web3 transaction on Sepolia via MetaMask
+  // Execute an authentic Web3 transaction on Sepolia via MetaMask with actual ETH deduction
+  const seedItems = mergeItemsWithSeed([], userAddress);
+  const targetItem = seedItems.find((i) => Number(i.itemId) === Number(itemId));
+
   let txHash;
   try {
+    const valueToSend = forceDemo ? 0n : (totalValueWei > 0n ? totalValueWei : parseEther('0.05'));
+    const recipient = forceDemo
+      ? userAddress
+      : (targetItem && targetItem.owner && targetItem.owner.startsWith('0x')
+          ? targetItem.owner
+          : (CONTRACT_ADDRESS || '0x2546BcD3c84621e976D8185a91A922aE77ECEc30'));
+
     const tx = await signer.sendTransaction({
-      to: userAddress,
-      value: 0n,
+      to: recipient,
+      value: valueToSend,
     });
     const receipt = await tx.wait();
     txHash = tx.hash;
   } catch (txErr) {
     if (txErr.code === 'ACTION_REJECTED' || txErr.code === 4001) throw txErr;
     console.warn('sendTransaction notice, using signed message confirmation:', txErr.message);
-    const sig = await signer.signMessage(`BlockRental Agreement: Rent Item #${itemId} (${durationInDays} days)`);
+    const sig = await signer.signMessage(`BlockRental Agreement: Rent Item #${itemId} (${durationDesc}) - Sepolia Deduction: ${totalEthToPay} ETH`);
     txHash = '0x' + sig.slice(2, 66);
   }
 
-  // Save newly rented item into dynamic local storage
-  const seedItems = mergeItemsWithSeed([], userAddress);
-  const targetItem = seedItems.find((i) => Number(i.itemId) === Number(itemId));
+  // Save newly rented item into dynamic local storage with exact real-time end timestamp
   const newRentalId = 300 + Math.floor(Math.random() * 700);
   const now = Math.floor(Date.now() / 1000);
 
@@ -335,12 +422,11 @@ export async function createRentalOnChain({ itemId, durationInDays, totalEthToPa
     owner: targetItem ? targetItem.owner : '0x2546BcD3c84621e976D8185a91A922aE77ECEc30',
     renter: userAddress,
     startTime: now,
-    endTime: now + 86400 * Number(durationInDays),
-    rentalPrice: targetItem ? targetItem.rentalPrice : parseEther('0.01'),
-    rentalPriceEth: targetItem ? targetItem.rentalPriceEth : '0.0100',
-    deposit: targetItem ? targetItem.deposit : parseEther('0.02'),
-    depositEth: targetItem ? targetItem.depositEth : '0.0200',
-    totalPaid: totalValueWei,
+    endTime: now + calculatedSeconds,
+    durationUnit: durationUnit,
+    durationValue: durationValue || onChainDays,
+    rentalPriceEth: targetItem ? targetItem.rentalPriceEth : '0.0500',
+    depositEth: targetItem ? targetItem.depositEth : '0.0500',
     totalPaidEth: String(totalEthToPay),
     status: RENTAL_STATUS.ACTIVE,
     createdAt: now,
@@ -350,7 +436,7 @@ export async function createRentalOnChain({ itemId, durationInDays, totalEthToPa
   // Mark item as unavailable/rented
   saveItemAvailabilityOverride(Number(itemId), false);
 
-  return { hash: txHash };
+  return { hash: txHash, rentalId: newRentalId };
 }
 
 /**
@@ -374,6 +460,12 @@ export async function returnItemOnChain(rentalId) {
   if (Number(rentalId) > 0 && Number(rentalId) <= onChainRentalCount) {
     const tx = await contract.returnItem(rentalId);
     const receipt = await tx.wait();
+    updateStoredRentalStatus(rentalId, RENTAL_STATUS.RETURNED);
+    const allRentals = mergeRentalsWithSeed([], userAddress);
+    const targetRental = allRentals.find((r) => Number(r.rentalId) === Number(rentalId));
+    if (targetRental) {
+      saveItemAvailabilityOverride(Number(targetRental.itemId), true);
+    }
     return { hash: tx.hash, receipt };
   }
 
@@ -423,6 +515,12 @@ export async function cancelRentalOnChain(rentalId) {
   if (Number(rentalId) > 0 && Number(rentalId) <= onChainRentalCount) {
     const tx = await contract.cancelRental(rentalId);
     const receipt = await tx.wait();
+    updateStoredRentalStatus(rentalId, RENTAL_STATUS.CANCELLED);
+    const allRentals = mergeRentalsWithSeed([], userAddress);
+    const targetRental = allRentals.find((r) => Number(r.rentalId) === Number(rentalId));
+    if (targetRental) {
+      saveItemAvailabilityOverride(Number(targetRental.itemId), true);
+    }
     return { hash: tx.hash, receipt };
   }
 
@@ -447,6 +545,73 @@ export async function cancelRentalOnChain(rentalId) {
   if (targetRental) {
     saveItemAvailabilityOverride(Number(targetRental.itemId), true);
   }
+
+  return { hash: txHash };
+}
+
+/**
+ * Extend an active rental agreement (Renter action)
+ * Increases rental end time and pays additional rental fee in ETH
+ */
+export async function extendRentalOnChain({
+  rentalId,
+  additionalSeconds,
+  additionalFeeEth = '0.0000',
+  forceDemo = false,
+}) {
+  const contract = await getSignerContract();
+  const signer = await getSigner();
+  const userAddress = await signer.getAddress();
+
+  const allRentals = mergeRentalsWithSeed([], userAddress);
+  const targetRental = allRentals.find((r) => Number(r.rentalId) === Number(rentalId));
+
+  const additionalWei = parseEther(String(additionalFeeEth || '0'));
+  let txHash;
+
+  let onChainRentalCount = 0;
+  try {
+    if (typeof contract.getRentalCount === 'function') {
+      const count = await contract.getRentalCount();
+      onChainRentalCount = Number(count);
+    }
+  } catch (err) {
+    onChainRentalCount = 0;
+  }
+
+  // If contract has extendRental method:
+  if (!forceDemo && Number(rentalId) > 0 && Number(rentalId) <= onChainRentalCount && typeof contract.extendRental === 'function') {
+    const additionalDays = Math.max(1, Math.ceil(Number(additionalSeconds) / 86400));
+    const tx = await contract.extendRental(rentalId, additionalDays, { value: additionalWei });
+    const receipt = await tx.wait();
+    txHash = tx.hash;
+  } else {
+    // Web3 transaction for extension
+    try {
+      const recipient = forceDemo
+        ? userAddress
+        : (targetRental && targetRental.owner && targetRental.owner.startsWith('0x')
+            ? targetRental.owner
+            : (CONTRACT_ADDRESS || '0x2546BcD3c84621e976D8185a91A922aE77ECEc30'));
+
+      const tx = await signer.sendTransaction({
+        to: recipient,
+        value: forceDemo ? 0n : additionalWei,
+      });
+      const receipt = await tx.wait();
+      txHash = tx.hash;
+    } catch (txErr) {
+      if (txErr.code === 'ACTION_REJECTED' || txErr.code === 4001) throw txErr;
+      const minutesDesc = Math.max(1, Math.round(Number(additionalSeconds) / 60));
+      const sig = await signer.signMessage(
+        `BlockRental: Extend Agreement #${rentalId} by ${minutesDesc} mins - Additional Fee: ${additionalFeeEth} ETH`
+      );
+      txHash = '0x' + sig.slice(2, 66);
+    }
+  }
+
+  // Extend in local storage
+  extendRentalTime(rentalId, additionalSeconds, additionalFeeEth);
 
   return { hash: txHash };
 }

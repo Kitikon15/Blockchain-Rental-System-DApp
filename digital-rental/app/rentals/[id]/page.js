@@ -9,12 +9,15 @@ import {
   fetchItemById,
   fetchAllRentals,
   updateItemAvailabilityOnChain,
+  returnItemOnChain,
+  cancelRentalOnChain,
   isContractConfigured,
   parseContractError,
 } from '../../../lib/contract';
-import { formatAddress } from '../../../lib/wallet';
-import { DEFAULT_EXPLORER_URL, CATEGORY_ICONS } from '../../../lib/constants';
+import { formatAddress, formatDateTime } from '../../../lib/wallet';
+import { DEFAULT_EXPLORER_URL, CATEGORY_ICONS, RENTAL_STATUS } from '../../../lib/constants';
 import RentalStatus from '../../../components/RentalStatus';
+import RentalCountdown from '../../../components/RentalCountdown';
 import RentalModal from '../../../components/RentalModal';
 import Loading from '../../../components/Loading';
 import ErrorMessage from '../../../components/ErrorMessage';
@@ -49,14 +52,18 @@ export default function ItemDetailsPage() {
   const contractConfigured = isContractConfigured();
   const explorerBase = process.env.NEXT_PUBLIC_EXPLORER_URL || DEFAULT_EXPLORER_URL;
 
+  // Live action state (Return or Cancel)
+  const [actionTxState, setActionTxState] = useState(null);
+  const [actionTxHash, setActionTxHash] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+
   const loadItemDetails = useCallback(async () => {
     if (!contractConfigured || !itemId) {
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
     try {
       const fetchedItem = await fetchItemById(Number(itemId), account);
       setItem(fetchedItem);
@@ -81,11 +88,25 @@ export default function ItemDetailsPage() {
 
   useEffect(() => {
     loadItemDetails();
+    // Real-time live auto-refresh polling
+    const interval = setInterval(() => {
+      loadItemDetails();
+    }, 6000);
+    return () => clearInterval(interval);
   }, [loadItemDetails]);
 
   // Check ownership
   const isOwner =
     account && item?.owner && account.toLowerCase() === item.owner.toLowerCase();
+
+  // Check if current user is active renter of this item
+  const activeRentalForUser = itemRentals.find(
+    (r) =>
+      r.status === RENTAL_STATUS.ACTIVE &&
+      r.renter &&
+      account &&
+      r.renter.toLowerCase() === account.toLowerCase()
+  );
 
   const handleToggleAvailability = async () => {
     if (!isOwner) return;
@@ -105,6 +126,42 @@ export default function ItemDetailsPage() {
       setToggleTxState('failed');
     } finally {
       setIsToggling(false);
+    }
+  };
+
+  const handleReturnAction = async (rentalId) => {
+    setIsProcessingAction(true);
+    setActionTxState('waiting_approval');
+    setActionError(null);
+    try {
+      const { hash } = await returnItemOnChain(rentalId);
+      setActionTxHash(hash);
+      setActionTxState('confirmed');
+      await loadItemDetails();
+    } catch (err) {
+      console.error('Return item error:', err);
+      setActionError(parseContractError(err));
+      setActionTxState('failed');
+    } finally {
+      setIsProcessingAction(false);
+    }
+  };
+
+  const handleCancelAction = async (rentalId) => {
+    setIsProcessingAction(true);
+    setActionTxState('waiting_approval');
+    setActionError(null);
+    try {
+      const { hash } = await cancelRentalOnChain(rentalId);
+      setActionTxHash(hash);
+      setActionTxState('confirmed');
+      await loadItemDetails();
+    } catch (err) {
+      console.error('Cancel rental error:', err);
+      setActionError(parseContractError(err));
+      setActionTxState('failed');
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 
@@ -266,15 +323,32 @@ export default function ItemDetailsPage() {
             {/* Previous Rental History for this Item */}
             <div className="card shadow-sm border bg-white">
               <div className="card-header bg-light d-flex justify-content-between align-items-center py-3">
-                <h5 className="fw-bold text-dark mb-0">
-                  <i className="bi bi-clock-history text-secondary me-2"></i>
-                  {t('rentalDetails.historyTitle')}
-                </h5>
+                <div className="d-flex align-items-center gap-2">
+                  <h5 className="fw-bold text-dark mb-0">
+                    <i className="bi bi-clock-history text-secondary me-2"></i>
+                    {t('rentalDetails.historyTitle')}
+                  </h5>
+                  <span className="badge bg-success-subtle text-success border border-success-subtle small">
+                    <i className="bi bi-broadcast me-1"></i>
+                    {language === 'th' ? 'อัปเดตสด Real-Time' : 'Live Real-Time'}
+                  </span>
+                </div>
                 <span className="badge bg-secondary-subtle text-secondary small">
                   {itemRentals.length} {language === 'th' ? 'รายการ' : 'Total Records'}
                 </span>
               </div>
               <div className="card-body p-0">
+                {actionTxState && (
+                  <div className="p-3 border-bottom">
+                    <TransactionStatus
+                      status={actionTxState}
+                      txHash={actionTxHash}
+                      errorMessage={actionError}
+                      onReset={() => setActionTxState(null)}
+                    />
+                  </div>
+                )}
+
                 {itemRentals.length === 0 ? (
                   <div className="text-center py-4 text-muted small">
                     {t('rentalDetails.noHistory')}
@@ -288,32 +362,83 @@ export default function ItemDetailsPage() {
                           <th>{t('common.renter')}</th>
                           <th>{language === 'th' ? 'เริ่มต้น' : 'Start'}</th>
                           <th>{language === 'th' ? 'สิ้นสุด' : 'End'}</th>
+                          <th>{language === 'th' ? 'นับถอยหลัง Real-time' : 'Live Countdown'}</th>
                           <th>{t('dashboard.tableTotalPaid')}</th>
                           <th>{t('common.status')}</th>
+                          <th className="text-end">{language === 'th' ? 'จัดการ' : 'Action'}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {itemRentals.map((r) => (
-                          <tr key={r.rentalId}>
-                            <td className="fw-bold font-monospace">#{r.rentalId}</td>
-                            <td className="font-monospace">
-                              <a
-                                href={`${explorerBase}/address/${r.renter}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-decoration-none text-secondary"
-                              >
-                                {formatAddress(r.renter)}
-                              </a>
-                            </td>
-                            <td>{new Date(r.startTime * 1000).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')}</td>
-                            <td>{new Date(r.endTime * 1000).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')}</td>
-                            <td className="font-monospace text-primary fw-medium">{r.totalPaidEth} ETH</td>
-                            <td>
-                              <RentalStatus status={r.status} />
-                            </td>
-                          </tr>
-                        ))}
+                        {itemRentals.map((r) => {
+                          const isRenter = account && r.renter && r.renter.toLowerCase() === account.toLowerCase();
+                          const isRentalOwner = account && r.owner && r.owner.toLowerCase() === account.toLowerCase();
+                          const canAct = (isRenter || isRentalOwner) && r.status === RENTAL_STATUS.ACTIVE;
+
+                          return (
+                            <tr key={r.rentalId}>
+                              <td className="fw-bold font-monospace">#{r.rentalId}</td>
+                              <td className="font-monospace">
+                                <a
+                                  href={`${explorerBase}/address/${r.renter}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-decoration-none text-secondary"
+                                >
+                                  {formatAddress(r.renter)}
+                                </a>
+                              </td>
+                              <td className="font-monospace text-dark">{formatDateTime(r.startTime, language)}</td>
+                              <td className="font-monospace text-dark">{formatDateTime(r.endTime, language)}</td>
+                              <td>
+                                <RentalCountdown
+                                  endTime={r.endTime}
+                                  startTime={r.startTime}
+                                  status={r.status}
+                                  compact={true}
+                                />
+                              </td>
+                              <td className="font-monospace text-primary fw-medium">{r.totalPaidEth} ETH</td>
+                              <td>
+                                <RentalStatus status={r.status} />
+                              </td>
+                              <td className="text-end">
+                                {canAct ? (
+                                  <div className="d-flex justify-content-end gap-1">
+                                    {isRenter && (
+                                      <button
+                                        onClick={() => handleReturnAction(r.rentalId)}
+                                        disabled={isProcessingAction}
+                                        className="btn btn-xs btn-outline-success py-0 px-2 rounded-pill"
+                                        title={language === 'th' ? 'ส่งคืนทรัพย์สิน & รับเงินมัดจำคืน' : 'Return item & refund deposit'}
+                                      >
+                                        <i className="bi bi-arrow-return-left me-1"></i>
+                                        {language === 'th' ? 'ส่งคืน' : 'Return'}
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handleCancelAction(r.rentalId)}
+                                      disabled={isProcessingAction}
+                                      className="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill"
+                                      title={language === 'th' ? 'ยกเลิกการเช่า & คืนเงินมัดจำทันที' : 'Cancel rental & refund deposit'}
+                                    >
+                                      <i className="bi bi-x-circle me-1"></i>
+                                      {language === 'th' ? 'ยกเลิกมัดจำ' : 'Cancel'}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <Link
+                                    href={`/claims?id=${r.rentalId}`}
+                                    className="btn btn-xs btn-outline-secondary py-0 px-2 rounded-pill text-decoration-none"
+                                    title={language === 'th' ? 'ตรวจสอบสัญญา' : 'Audit'}
+                                  >
+                                    <i className="bi bi-search me-1"></i>
+                                    {language === 'th' ? 'ตรวจสัญญา' : 'Audit'}
+                                  </Link>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -387,6 +512,42 @@ export default function ItemDetailsPage() {
                     <button className="btn btn-secondary py-2.5" disabled>
                       <i className="bi bi-person-check me-2"></i> {t('rentalDetails.youOwnThis')}
                     </button>
+                  ) : activeRentalForUser ? (
+                    <div className="d-flex flex-column gap-2">
+                      <div className="alert alert-success py-2 px-3 small mb-1 border-success-subtle">
+                        <div className="fw-bold mb-1">
+                          <i className="bi bi-check-circle-fill text-success me-1"></i>
+                          {language === 'th' ? 'คุณกำลังเช่าทรัพย์สินนี้อยู่' : 'You are currently renting this item'}
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between mt-1">
+                          <span className="text-muted small">{language === 'th' ? 'เวลานับถอยหลัง:' : 'Countdown:'}</span>
+                          <RentalCountdown
+                            endTime={activeRentalForUser.endTime}
+                            startTime={activeRentalForUser.startTime}
+                            status={activeRentalForUser.status}
+                            compact={true}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleReturnAction(activeRentalForUser.rentalId)}
+                        disabled={isProcessingAction}
+                        className="btn btn-success fw-bold py-2 shadow-sm"
+                        title={language === 'th' ? 'ส่งคืนทรัพย์สินและรับเงินมัดจำคืน' : 'Return item and receive deposit refund'}
+                      >
+                        <i className="bi bi-arrow-return-left me-1"></i>
+                        {language === 'th' ? 'ส่งคืนทรัพย์สิน (รับมัดจำคืน)' : 'Return Item & Refund Deposit'}
+                      </button>
+                      <button
+                        onClick={() => handleCancelAction(activeRentalForUser.rentalId)}
+                        disabled={isProcessingAction}
+                        className="btn btn-outline-danger fw-bold py-2"
+                        title={language === 'th' ? 'ยกเลิกการเช่าและรับเงินมัดจำคืนทันที' : 'Cancel rental and refund deposit'}
+                      >
+                        <i className="bi bi-x-circle me-1"></i>
+                        {language === 'th' ? 'ยกเลิกการเช่า (คืนมัดจำทันที)' : 'Cancel Rental & Refund Deposit'}
+                      </button>
+                    </div>
                   ) : !item.available ? (
                     <button className="btn btn-danger py-2.5" disabled>
                       <i className="bi bi-lock me-2"></i> {t('rentalDetails.currentlyUnavailable')}

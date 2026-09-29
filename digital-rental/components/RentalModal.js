@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useWallet } from '../context/WalletContext';
 import { useLanguage } from '../context/LanguageContext';
 import { createRentalOnChain, parseContractError } from '../lib/contract';
@@ -24,24 +25,65 @@ export default function RentalModal({
   const { account, isSepolia, balance, connect, switchNetwork } = useWallet();
   const { t, language } = useLanguage();
 
-  const [durationDays, setDurationDays] = useState(1);
+  const [durationValue, setDurationValue] = useState(1);
+  const [durationUnit, setDurationUnit] = useState('days'); // 'days' | 'hours' | 'minutes'
+  const [currentNow, setCurrentNow] = useState(() => new Date());
   const [txState, setTxState] = useState(null); // 'waiting_approval' | 'pending' | 'confirmed' | 'failed'
   const [txHash, setTxHash] = useState(null);
+  const [confirmedRentalId, setConfirmedRentalId] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Live timer for real-time schedule preview
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setCurrentNow(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
   if (!isOpen || !item) return null;
 
-  // Pricing calculations
-  const pricePerDay = parseFloat(item.rentalPriceEth || '0');
-  const deposit = parseFloat(item.depositEth || '0');
-  const subtotalRental = pricePerDay * Number(durationDays || 1);
-  const totalEthRequired = (subtotalRental + deposit).toFixed(6);
+  // Pricing calculations - Starts with minimum 0.05 Sepolia ETH deduction as requested
+  const MIN_STARTING_ETH = 0.05;
+  const pricePerDay = Math.max(0.05, parseFloat(item.rentalPriceEth || '0.05'));
+  const deposit = parseFloat(item.depositEth || '0.05');
+  const val = Number(durationValue || 1);
 
-  // Projected end date
-  const now = new Date();
-  const projectedEndDate = new Date(now.getTime() + Number(durationDays || 1) * 24 * 60 * 60 * 1000);
-  const locale = language === 'th' ? 'th-TH' : 'en-US';
+  let subtotalRental = 0;
+  let durationInSeconds = 86400;
+
+  if (durationUnit === 'minutes') {
+    durationInSeconds = Math.max(10, val * 60);
+    // Real-time minutes rate starting at 0.05 Sepolia ETH
+    subtotalRental = Math.max(0.05, (pricePerDay / 1440) * val);
+  } else if (durationUnit === 'hours') {
+    durationInSeconds = Math.max(60, val * 3600);
+    subtotalRental = Math.max(0.05, (pricePerDay / 24) * val);
+  } else {
+    durationInSeconds = Math.max(86400, val * 86400);
+    subtotalRental = Math.max(0.05, pricePerDay * val);
+  }
+
+  // Ensure total ETH deducted on Sepolia is at least 0.05 Sepolia ETH
+  const totalEthRequired = Math.max(MIN_STARTING_ETH, subtotalRental + deposit).toFixed(4);
+
+  // Real-time projected end date
+  const projectedEndDate = new Date(currentNow.getTime() + durationInSeconds * 1000);
+  const locale = language === 'th' ? 'th-TH' : 'en-GB';
+
+  const formatScheduleTime = (d) => {
+    return d.toLocaleString(locale, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+  };
 
   // Check if connected user is owner
   const isOwner = account && item.owner && account.toLowerCase() === item.owner.toLowerCase();
@@ -50,11 +92,12 @@ export default function RentalModal({
   const hasZeroBalance = account && userBalance <= 0.00001;
 
   const handleDurationChange = (e) => {
-    const val = parseInt(e.target.value, 10);
-    if (!isNaN(val) && val >= 1 && val <= 365) {
-      setDurationDays(val);
+    const parsed = parseInt(e.target.value, 10);
+    const maxVal = durationUnit === 'minutes' ? 720 : durationUnit === 'hours' ? 168 : 365;
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= maxVal) {
+      setDurationValue(parsed);
     } else if (e.target.value === '') {
-      setDurationDays('');
+      setDurationValue('');
     }
   };
 
@@ -73,9 +116,9 @@ export default function RentalModal({
       return;
     }
 
-    const days = parseInt(durationDays, 10);
-    if (!days || days < 1) {
-      setErrorMsg(language === 'th' ? 'กรุณาระบุระยะเวลาเช่าอย่างน้อย 1 วัน' : 'Please enter a valid rental duration of at least 1 day.');
+    const durationNum = parseInt(durationValue, 10);
+    if (!durationNum || durationNum < 1) {
+      setErrorMsg(language === 'th' ? 'กรุณาระบุระยะเวลาเช่าที่ถูกต้อง' : 'Please enter a valid rental duration.');
       return;
     }
 
@@ -84,21 +127,25 @@ export default function RentalModal({
     setTxState('waiting_approval');
 
     try {
-      // Send transaction to Sepolia blockchain
-      const { hash } = await createRentalOnChain({
+      // Send transaction to Sepolia blockchain with real-time seconds calculation
+      const { hash, rentalId } = await createRentalOnChain({
         itemId: item.itemId,
-        durationInDays: days,
+        durationInDays: Math.max(1, Math.ceil(durationInSeconds / 86400)),
+        durationValue: durationNum,
+        durationUnit: durationUnit,
+        durationInSeconds: durationInSeconds,
         totalEthToPay: totalEthRequired,
         forceDemo,
       });
 
       setTxHash(hash);
+      if (rentalId) setConfirmedRentalId(rentalId);
       setTxState('pending');
 
       // Transaction successfully confirmed on-chain
       setTxState('confirmed');
       if (onRentalSuccess) {
-        onRentalSuccess(hash);
+        onRentalSuccess(hash, rentalId);
       }
     } catch (err) {
       console.error('Rental transaction error:', err);
@@ -113,6 +160,7 @@ export default function RentalModal({
   const handleReset = () => {
     setTxState(null);
     setTxHash(null);
+    setConfirmedRentalId(null);
     setErrorMsg(null);
   };
 
@@ -138,8 +186,67 @@ export default function RentalModal({
 
             {/* Modal Body */}
             <div className="modal-body p-4">
+              {/* Transaction Confirmed Rich Completion Card */}
+              {txState === 'confirmed' && (
+                <div className="card border-success bg-success-subtle mb-4 shadow-sm rounded-4 overflow-hidden animate__animated animate__fadeIn">
+                  <div className="card-body p-4 text-center">
+                    <div
+                      className="rounded-circle bg-success text-white mx-auto mb-3 d-flex align-items-center justify-content-center shadow"
+                      style={{ width: '56px', height: '56px' }}
+                    >
+                      <i className="bi bi-check-lg fs-2"></i>
+                    </div>
+
+                    <h4 className="fw-bold text-success-emphasis mb-1">
+                      {language === 'th' ? '🎉 ทำสัญญาเช่าบนบล็อกเชนสำเร็จ!' : '🎉 Rental Agreement Confirmed!'}
+                    </h4>
+
+                    <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
+                      <span className="badge bg-dark font-monospace px-2.5 py-1.5 fs-6">
+                        {language === 'th'
+                          ? `สัญญาเช่า #${confirmedRentalId || item.itemId}`
+                          : `Agreement #${confirmedRentalId || item.itemId}`}
+                      </span>
+                      <span className="badge bg-success font-monospace px-2.5 py-1.5 fs-6">
+                        {language === 'th' ? 'บันทึกบน Sepolia แล้ว' : 'Recorded on Sepolia'}
+                      </span>
+                    </div>
+
+                    <p className="text-secondary small mb-4" style={{ maxWidth: '520px', margin: '0 auto' }}>
+                      {language === 'th'
+                        ? 'สัญญาเช่าและเงินมัดจำความเสียหายของคุณได้รับการบันทึกบน Smart Contract เรียบร้อยแล้ว ระบบเริ่มนับเวลาเช่าแบบ Real-time ทันที คุณสามารถตรวจสอบสัญญาเช่าหรือเข้าดูรายการที่กำลังเช่าอยู่ได้ทันที:'
+                        : 'Your lease agreement and escrow deposit are confirmed on Ethereum Sepolia. Real-time timer is ticking. You can inspect the contract or manage your active lease immediately:'}
+                    </p>
+
+                    <div className="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                      <Link
+                        href={`/claims?id=${confirmedRentalId || item.itemId}`}
+                        className="btn btn-info text-white fw-bold px-3 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                        onClick={onClose}
+                      >
+                        <i className="bi bi-search"></i>
+                        {language === 'th'
+                          ? '🔍 ตรวจสอบสัญญาเช่าทันที (Audit Claims)'
+                          : '🔍 Audit Agreement Now'}
+                      </Link>
+
+                      <Link
+                        href="/my-rentals?status=ACTIVE"
+                        className="btn btn-primary fw-bold px-3 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                        onClick={onClose}
+                      >
+                        <i className="bi bi-box-seam"></i>
+                        {language === 'th'
+                          ? '📦 ดูรายการที่กำลังเช่าอยู่ (My Rentals)'
+                          : '📦 View Active Rentals'}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Transaction State Banner if active */}
-              {txState && (
+              {txState && txState !== 'confirmed' && (
                 <TransactionStatus
                   status={txState}
                   txHash={txHash}
@@ -168,36 +275,128 @@ export default function RentalModal({
                 </div>
               </div>
 
-              {/* Rent Duration Selector */}
-              <div className="row g-3 mb-4">
-                <div className="col-md-6">
-                  <label htmlFor="durationDays" className="form-label fw-bold small text-dark">
-                    {t('modal.durationLabel')}
+              {/* Rent Duration Selector (Real-Time Mode Selection) */}
+              <div className="card border mb-4 p-3 bg-light rounded-3">
+                <div className="d-flex flex-wrap justify-content-between align-items-center mb-2">
+                  <label className="form-label fw-bold small text-dark mb-0">
+                    <i className="bi bi-clock-history text-primary me-1"></i>
+                    {language === 'th' ? 'เลือกระยะเวลาเช่า (รองรับ Real-time Demo)' : 'Rental Duration (Real-time Supported)'}
                   </label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-white">
-                      <i className="bi bi-calendar3"></i>
-                    </span>
-                    <input
-                      type="number"
-                      id="durationDays"
-                      min="1"
-                      max="365"
-                      className="form-control"
-                      value={durationDays}
-                      onChange={handleDurationChange}
-                      disabled={isSubmitting}
-                    />
-                    <span className="input-group-text bg-white">{t('common.days')}</span>
-                  </div>
-                  <div className="form-text small">{t('modal.durationHelp')}</div>
+                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle small">
+                    <i className="bi bi-broadcast me-1"></i>
+                    {language === 'th' ? 'คำนวณสด Real-time' : 'Live Real-time'}
+                  </span>
                 </div>
 
-                <div className="col-md-6">
-                  <label className="form-label fw-bold small text-dark">{t('modal.scheduleLabel')}</label>
-                  <div className="bg-white border rounded p-2 small">
-                    <div className="text-muted">{t('modal.scheduleStart')} <span className="text-dark fw-medium">{now.toLocaleDateString(locale)}</span></div>
-                    <div className="text-muted">{t('modal.scheduleEnd')} <span className="text-dark fw-medium">{projectedEndDate.toLocaleDateString(locale)}</span></div>
+                {/* Duration Unit Selector Buttons */}
+                <div className="btn-group w-100 mb-3" role="group">
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${durationUnit === 'minutes' ? 'btn-primary fw-bold' : 'btn-outline-secondary bg-white'}`}
+                    onClick={() => {
+                      setDurationUnit('minutes');
+                      if (durationValue > 60) setDurationValue(5);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <i className="bi bi-lightning-charge-fill me-1 text-warning"></i>
+                    {language === 'th' ? 'นาที (ทดสอบ Real-time Demo)' : 'Minutes (Demo Real-time)'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${durationUnit === 'hours' ? 'btn-primary fw-bold' : 'btn-outline-secondary bg-white'}`}
+                    onClick={() => {
+                      setDurationUnit('hours');
+                      if (durationValue > 48) setDurationValue(2);
+                    }}
+                    disabled={isSubmitting}
+                  >
+                    <i className="bi bi-hourglass-split me-1"></i>
+                    {language === 'th' ? 'ชั่วโมง' : 'Hours'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${durationUnit === 'days' ? 'btn-primary fw-bold' : 'btn-outline-secondary bg-white'}`}
+                    onClick={() => setDurationUnit('days')}
+                    disabled={isSubmitting}
+                  >
+                    <i className="bi bi-calendar3 me-1"></i>
+                    {language === 'th' ? 'วัน' : 'Days'}
+                  </button>
+                </div>
+
+                <div className="row g-3">
+                  <div className="col-md-5">
+                    <div className="input-group">
+                      <span className="input-group-text bg-white">
+                        <i className="bi bi-stopwatch"></i>
+                      </span>
+                      <input
+                        type="number"
+                        id="durationValue"
+                        min="1"
+                        max={durationUnit === 'minutes' ? 720 : durationUnit === 'hours' ? 168 : 365}
+                        className="form-control fw-bold"
+                        value={durationValue}
+                        onChange={handleDurationChange}
+                        disabled={isSubmitting}
+                      />
+                      <span className="input-group-text bg-white fw-medium">
+                        {durationUnit === 'minutes'
+                          ? language === 'th' ? 'นาที' : 'mins'
+                          : durationUnit === 'hours'
+                          ? language === 'th' ? 'ชั่วโมง' : 'hrs'
+                          : language === 'th' ? 'วัน' : 'days'}
+                      </span>
+                    </div>
+
+                    {/* Quick Demo Presets */}
+                    <div className="d-flex flex-wrap gap-1 mt-2">
+                      <span className="small text-muted me-1">{language === 'th' ? 'ลัด:' : 'Quick:'}</span>
+                      {durationUnit === 'minutes' ? (
+                        <>
+                          <button type="button" onClick={() => setDurationValue(2)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">2 นาที</button>
+                          <button type="button" onClick={() => setDurationValue(5)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">5 นาที</button>
+                          <button type="button" onClick={() => setDurationValue(15)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">15 นาที</button>
+                        </>
+                      ) : durationUnit === 'hours' ? (
+                        <>
+                          <button type="button" onClick={() => setDurationValue(1)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">1 ชม.</button>
+                          <button type="button" onClick={() => setDurationValue(4)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">4 ชม.</button>
+                          <button type="button" onClick={() => setDurationValue(12)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">12 ชม.</button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" onClick={() => setDurationValue(1)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">1 วัน</button>
+                          <button type="button" onClick={() => setDurationValue(3)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">3 วัน</button>
+                          <button type="button" onClick={() => setDurationValue(7)} className="btn btn-xs btn-outline-secondary py-0 px-1.5 rounded">7 วัน</button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Real-time projected start and end times */}
+                  <div className="col-md-7">
+                    <div className="bg-white border rounded p-2.5 small shadow-xs">
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <span className="text-muted">
+                          <i className="bi bi-play-circle text-success me-1"></i>
+                          {language === 'th' ? 'เวลาเริ่มต้น (ปัจจุบัน):' : 'Start Timestamp:'}
+                        </span>
+                        <span className="font-monospace fw-semibold text-dark">
+                          {formatScheduleTime(currentNow)}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span className="text-muted">
+                          <i className="bi bi-flag-fill text-danger me-1"></i>
+                          {language === 'th' ? 'เวลาสิ้นสุดสัญญาเช่า:' : 'End Timestamp:'}
+                        </span>
+                        <span className="font-monospace fw-bold text-primary">
+                          {formatScheduleTime(projectedEndDate)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -205,16 +404,26 @@ export default function RentalModal({
               {/* Cost Breakdown */}
               <div className="card border-info-subtle bg-info-subtle mb-4">
                 <div className="card-body py-3">
-                  <h6 className="fw-bold text-dark mb-3">{t('modal.paymentBreakdown')}</h6>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h6 className="fw-bold text-dark mb-0">{t('modal.paymentBreakdown')}</h6>
+                    <span className="badge bg-primary text-white small">
+                      ⚡ {language === 'th' ? 'หัก Sepolia เริ่มต้น 0.05 ETH' : 'Starting 0.05 Sepolia ETH'}
+                    </span>
+                  </div>
                   <div className="d-flex justify-content-between small mb-1">
                     <span className="text-muted">
-                      {t('modal.rentalFee')} ({item.rentalPriceEth} ETH x {durationDays || 0} {t('common.days')}):
+                      {t('modal.rentalFee')} ({durationValue || 0}{' '}
+                      {durationUnit === 'minutes'
+                        ? language === 'th' ? 'นาที' : 'minutes'
+                        : durationUnit === 'hours'
+                        ? language === 'th' ? 'ชั่วโมง' : 'hours'
+                        : language === 'th' ? 'วัน' : 'days'}):
                     </span>
-                    <span className="font-monospace text-dark">{subtotalRental.toFixed(6)} ETH</span>
+                    <span className="font-monospace text-dark fw-semibold">{subtotalRental.toFixed(4)} ETH</span>
                   </div>
                   <div className="d-flex justify-content-between small mb-2">
                     <span className="text-muted">{t('modal.refundableDeposit')}</span>
-                    <span className="font-monospace text-dark">{item.depositEth} ETH</span>
+                    <span className="font-monospace text-success fw-bold">+{item.depositEth || '0.0500'} ETH</span>
                   </div>
                   <div className="d-flex justify-content-between border-top border-secondary-subtle pt-2 fw-bold">
                     <span className="text-dark">{t('modal.totalEth')}</span>
@@ -259,18 +468,29 @@ export default function RentalModal({
                   </div>
                   <div className="text-secondary mb-2">
                     {language === 'th'
-                      ? 'ยอดเหรียญในกระเป๋าของคุณน้อยกว่าค่าเช่า แต่คุณสามารถกดทดสอบเช่าแบบจำลองได้ครับ'
-                      : 'Wallet balance is lower than total price, but you can test rent in demo mode.'}
+                      ? `ยอด Sepolia ETH ในกระเป๋าคุณมี ${userBalance.toFixed(4)} ETH ซึ่งน้อยกว่ายอดที่ต้องหักเริ่มต้น (${totalEthRequired} ETH) คุณสามารถขอเหรียญฟรีจาก Sepolia Faucet หรือกดปุ่มด้านล่างเพื่อทดสอบเช่าได้ทันที`
+                      : `Your balance is ${userBalance.toFixed(4)} ETH, less than the required ${totalEthRequired} ETH. You can request testnet ETH from a Sepolia Faucet or test rent in demo mode below.`}
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-primary fw-bold"
-                    onClick={() => handleConfirmRental(true)}
-                    disabled={isSubmitting}
-                  >
-                    <i className="bi bi-play-circle me-1"></i>
-                    {language === 'th' ? 'ทดสอบเช่า (Demo Rental)' : 'Test Rent in Demo Mode'}
-                  </button>
+                  <div className="d-flex gap-2">
+                    <a
+                      href="https://sepoliafaucet.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm btn-outline-secondary"
+                    >
+                      <i className="bi bi-box-arrow-up-right me-1"></i>
+                      {language === 'th' ? 'ขอเหรียญฟรี Sepolia Faucet' : 'Sepolia Faucet'}
+                    </a>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-primary fw-bold"
+                      onClick={() => handleConfirmRental(true)}
+                      disabled={isSubmitting}
+                    >
+                      <i className="bi bi-play-circle me-1"></i>
+                      {language === 'th' ? 'ทดสอบเช่า (Demo Mode)' : 'Test Rent in Demo Mode'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

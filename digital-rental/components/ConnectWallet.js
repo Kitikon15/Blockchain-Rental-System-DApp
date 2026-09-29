@@ -94,7 +94,19 @@ export default function ConnectWallet() {
     handleCloseModal();
   };
 
-  // 1. MetaMask not installed
+  // Prevent SSR hydration mismatch - render matching placeholder button during initial hydration
+  if (!mounted) {
+    return (
+      <button
+        disabled
+        className="btn btn-info btn-sm d-flex align-items-center px-3.5 py-1.5 fw-bold text-dark shadow-sm rounded-pill opacity-75"
+      >
+        <i className="bi bi-wallet2 me-1.5"></i> {t('nav.connectWallet')}
+      </button>
+    );
+  }
+
+  // 1. MetaMask not installed (evaluated only after client mount)
   if (!isMetaMaskInstalled()) {
     return (
       <a
