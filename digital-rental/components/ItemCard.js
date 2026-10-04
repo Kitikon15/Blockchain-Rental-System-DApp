@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import RentalStatus from './RentalStatus';
 import { formatAddress } from '../lib/wallet';
-import { CATEGORY_ICONS, DEFAULT_EXPLORER_URL } from '../lib/constants';
+import { CATEGORY_ICONS, DEFAULT_EXPLORER_URL, RENTAL_STATUS } from '../lib/constants';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
@@ -11,7 +11,7 @@ import { useLanguage } from '../context/LanguageContext';
  * Renders individual rentable item with pricing, availability, owner details,
  * and navigation to the detailed rental page with i18n support.
  */
-export default function ItemCard({ item, onRentClick = null }) {
+export default function ItemCard({ item, onRentClick = null, userRental = null }) {
   const { t, language } = useLanguage();
 
   if (!item) return null;
@@ -20,17 +20,51 @@ export default function ItemCard({ item, onRentClick = null }) {
   const categoryLabel = t(`categories.${item.category}`) || item.category || (language === 'th' ? 'ทั่วไป' : 'General');
   const explorerBase = process.env.NEXT_PUBLIC_EXPLORER_URL || DEFAULT_EXPLORER_URL;
 
+  const isRentedByCurrentUser = Boolean(userRental);
+  const isPendingCancel = userRental && userRental.status === RENTAL_STATUS.CANCEL_REQUESTED;
+
   return (
-    <div className="card h-100 card-hover shadow-sm border bg-white">
+    <div
+      className={`card h-100 card-hover shadow-sm bg-white ${
+        isPendingCancel
+          ? 'border-warning border-2'
+          : isRentedByCurrentUser
+          ? 'border-success border-2'
+          : 'border'
+      }`}
+    >
       {/* Card Header with Category and Item ID */}
       <div className="card-header bg-transparent border-bottom-0 pt-3 pb-0 d-flex justify-content-between align-items-center">
-        <span className="badge bg-light text-primary border small text-truncate" style={{ maxWidth: '75%' }}>
+        <span className="badge bg-light text-primary border small text-truncate" style={{ maxWidth: '65%' }}>
           <i className={`bi ${categoryIcon} me-1`}></i>
           {categoryLabel}
         </span>
-        <span className="badge bg-secondary-subtle text-secondary font-monospace small">
-          #{item.itemId}
-        </span>
+        <div className="d-flex align-items-center gap-1">
+          {isRentedByCurrentUser && (
+            <span
+              className={`badge ${
+                isPendingCancel ? 'bg-warning text-dark' : 'bg-success text-white'
+              } small`}
+              title={
+                isPendingCancel
+                  ? language === 'th' ? 'ส่งคำขอยกเลิกแล้ว รอเจ้าของอนุมัติและคืนเงิน' : 'Cancellation pending owner approval'
+                  : language === 'th' ? 'คุณกำลังเช่าทรัพย์สินชิ้นนี้อยู่' : 'You are currently renting this'
+              }
+            >
+              <i
+                className={`bi ${
+                  isPendingCancel ? 'bi-hourglass-split' : 'bi-check-circle-fill'
+                } me-1`}
+              ></i>
+              {isPendingCancel
+                ? (language === 'th' ? 'รออนุมัติยกเลิก' : 'Cancel Pending')
+                : (language === 'th' ? 'คุณเช่าอยู่นี้' : 'Rented by You')}
+            </span>
+          )}
+          <span className="badge bg-secondary-subtle text-secondary font-monospace small">
+            #{item.itemId}
+          </span>
+        </div>
       </div>
 
       {/* Card Body */}
@@ -81,19 +115,39 @@ export default function ItemCard({ item, onRentClick = null }) {
 
         {/* Actions */}
         <div className="d-grid gap-2">
-          <Link
-            href={`/rentals/${item.itemId}`}
-            className="btn btn-outline-primary btn-sm fw-medium d-flex align-items-center justify-content-center"
-          >
-            <i className="bi bi-eye me-1.5"></i> {t('rentals.viewDetailsRent')}
-          </Link>
-          {onRentClick && item.available && (
-            <button
-              onClick={() => onRentClick(item)}
-              className="btn btn-primary btn-sm fw-medium d-flex align-items-center justify-content-center"
+          {isRentedByCurrentUser ? (
+            <Link
+              href={`/rentals/${item.itemId}`}
+              className={`btn ${
+                isPendingCancel ? 'btn-outline-warning text-dark' : 'btn-outline-success'
+              } btn-sm fw-bold d-flex align-items-center justify-content-center`}
             >
-              <i className="bi bi-cart-plus me-1.5"></i> {t('rentals.rentNow')}
-            </button>
+              <i
+                className={`bi ${
+                  isPendingCancel ? 'bi-hourglass-split' : 'bi-patch-check-fill'
+                } me-1.5`}
+              ></i>
+              {isPendingCancel
+                ? (language === 'th' ? 'ดูสถานะการขอยกเลิก' : 'View Cancel Status')
+                : (language === 'th' ? 'ดูข้อมูลการเช่าของคุณ' : 'View Your Rental Info')}
+            </Link>
+          ) : (
+            <>
+              <Link
+                href={`/rentals/${item.itemId}`}
+                className="btn btn-outline-primary btn-sm fw-medium d-flex align-items-center justify-content-center"
+              >
+                <i className="bi bi-eye me-1.5"></i> {t('rentals.viewDetailsRent')}
+              </Link>
+              {onRentClick && item.available && (
+                <button
+                  onClick={() => onRentClick(item)}
+                  className="btn btn-primary btn-sm fw-medium d-flex align-items-center justify-content-center"
+                >
+                  <i className="bi bi-cart-plus me-1.5"></i> {t('rentals.rentNow')}
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

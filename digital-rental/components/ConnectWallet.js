@@ -26,6 +26,7 @@ export default function ConnectWallet() {
     error,
     connect,
     disconnect,
+    switchAccount,
     switchNetwork,
   } = useWallet();
 
@@ -164,7 +165,7 @@ export default function ConnectWallet() {
   // 4. Connected to Sepolia successfully
   return (
     <>
-      <div className="wallet-chip">
+      <div className="wallet-chip d-flex align-items-center gap-1.5">
         {/* Network Badge */}
         <span className="badge bg-dark bg-opacity-75 text-light d-flex align-items-center py-1 px-2 rounded-pill small">
           <span className="pulse-indicator me-1.5"></span>
@@ -187,6 +188,22 @@ export default function ConnectWallet() {
           <i className="bi bi-person-circle text-info me-1"></i>
           <span>{shortAccount}</span>
           <i className="bi bi-chevron-down ms-1 text-muted" style={{ fontSize: '0.65rem' }}></i>
+        </button>
+
+        {/* Quick Switch Account Button */}
+        <button
+          type="button"
+          onClick={switchAccount}
+          disabled={isConnecting}
+          className="btn btn-xs btn-outline-info rounded-pill px-2.5 py-1 d-inline-flex align-items-center text-info"
+          style={{
+            borderColor: 'rgba(56, 189, 248, 0.45)',
+            backgroundColor: 'rgba(14, 165, 233, 0.12)',
+          }}
+          title={language === 'th' ? 'คลิกเพื่อเลือกสลับบัญชีใน MetaMask (Account 1 / Account 2)' : 'Click to switch MetaMask account'}
+        >
+          <i className="bi bi-arrow-left-right me-1"></i>
+          <span className="small fw-semibold">{language === 'th' ? 'สลับบัญชี' : 'Switch'}</span>
         </button>
       </div>
 
@@ -309,10 +326,26 @@ export default function ConnectWallet() {
                         </div>
                       </div>
 
+                      {/* Switch Account Button */}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await switchAccount();
+                          handleCloseModal();
+                        }}
+                        className="btn btn-outline-primary w-100 fw-semibold py-2 rounded-3 d-flex align-items-center justify-content-center mb-2"
+                        title={language === 'th' ? 'เปิดหน้าต่างเลือกบัญชีกระเป๋าใน MetaMask (เช่น Account 1 หรือ Account 2)' : 'Select or switch account in MetaMask'}
+                      >
+                        <i className="bi bi-arrow-left-right me-2"></i>
+                        {language === 'th' ? 'สลับบัญชีใน MetaMask (เลือก Account)' : 'Switch / Select MetaMask Account'}
+                      </button>
+
                       {/* Switch Account Tip */}
                       <div className="text-muted small mb-3 text-center" style={{ fontSize: '0.78rem' }}>
                         <i className="bi bi-info-circle me-1"></i>
-                        {t('nav.switchAccountTip')}
+                        {language === 'th'
+                          ? 'หากคุณมีหลาย Account ใน MetaMask (เช่น Account 1 และ Account 2) กดปุ่ม "สลับบัญชี" ด้านบนเพื่อให้ MetaMask เปิดหน้าต่างเลือกบัญชี'
+                          : t('nav.switchAccountTip')}
                       </div>
 
                       {/* Disconnect / Logout Trigger Button */}

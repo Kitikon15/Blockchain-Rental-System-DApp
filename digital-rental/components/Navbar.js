@@ -1,19 +1,65 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ConnectWallet from './ConnectWallet';
 import { useLanguage } from '../context/LanguageContext';
+import { useWallet } from '../context/WalletContext';
+import { fetchAllRentals, isContractConfigured } from '../lib/contract';
+import { RENTAL_STATUS } from '../lib/constants';
 
 /**
  * Navbar component
- * Responsive header with navigation links, branding, language switcher, and MetaMask widget
+ * Responsive header with navigation links, branding, badges, language switcher, and MetaMask widget
  */
 export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
+  const { account } = useWallet();
+
+  const [activeRentalCount, setActiveRentalCount] = useState(0);
+  const [pendingCancellationCount, setPendingCancellationCount] = useState(0);
+
+  const loadNavCounters = useCallback(async () => {
+    if (!account || !isContractConfigured()) {
+      setActiveRentalCount(0);
+      setPendingCancellationCount(0);
+      return;
+    }
+    try {
+      const all = await fetchAllRentals(account);
+      const userActive = (all || []).filter(
+        (r) =>
+          r.renter &&
+          r.renter.toLowerCase() === account.toLowerCase() &&
+          (r.status === RENTAL_STATUS.ACTIVE ||
+            r.status === RENTAL_STATUS.PENDING ||
+            r.status === RENTAL_STATUS.CANCEL_REQUESTED)
+      ).length;
+      setActiveRentalCount(userActive);
+
+      const ownerPending = (all || []).filter(
+        (r) =>
+          r.owner &&
+          r.owner.toLowerCase() === account.toLowerCase() &&
+          (r.status === RENTAL_STATUS.CANCEL_REQUESTED || r.status === RENTAL_STATUS.PENDING)
+      ).length;
+      setPendingCancellationCount(ownerPending);
+    } catch (_) {}
+  }, [account]);
+
+  useEffect(() => {
+    setActiveRentalCount(0);
+    setPendingCancellationCount(0);
+  }, [account]);
+
+  useEffect(() => {
+    loadNavCounters();
+    const interval = setInterval(loadNavCounters, 8000);
+    return () => clearInterval(interval);
+  }, [loadNavCounters]);
 
   const toggleNavbar = () => setIsOpen(!isOpen);
   const closeNavbar = () => setIsOpen(false);
@@ -23,8 +69,21 @@ export default function Navbar() {
     { href: '/dashboard', label: t('nav.dashboard'), icon: 'bi-speedometer2' },
     { href: '/rentals', label: t('nav.browse'), icon: 'bi-grid' },
     { href: '/register', label: t('nav.register'), icon: 'bi-plus-circle' },
-    { href: '/my-rentals', label: t('nav.myRentals'), icon: 'bi-bag-check' },
-    { href: '/owner', label: t('nav.ownerPanel'), icon: 'bi-shield-check' },
+    {
+      href: '/my-rentals',
+      label: t('nav.myRentals'),
+      icon: 'bi-bag-check',
+      badge: activeRentalCount > 0 ? activeRentalCount : null,
+      badgeColor: 'bg-primary',
+    },
+    {
+      href: '/owner',
+      label: t('nav.ownerPanel'),
+      icon: 'bi-shield-check',
+      badge: pendingCancellationCount > 0 ? pendingCancellationCount : null,
+      badgeColor: 'bg-danger animate__animated animate__pulse animate__infinite',
+      badgeTitle: language === 'th' ? 'มีคำขอยกเลิกรออนุมัติ' : 'Pending cancellation requests',
+    },
     { href: '/claims', label: t('nav.claims'), icon: 'bi-journal-check' },
   ];
 
@@ -70,11 +129,17 @@ export default function Navbar() {
                 <li className="nav-item" key={link.href}>
                   <Link
                     href={link.href}
-                    className={`nav-link ${isActive ? 'active' : ''}`}
+                    className={`nav-link ${isActive ? 'active' : ''} d-inline-flex align-items-center`}
                     onClick={closeNavbar}
+                    title={link.badgeTitle || ''}
                   >
                     <i className={`bi ${link.icon} me-1`}></i>
                     <span>{link.label}</span>
+                    {link.badge && (
+                      <span className={`badge ${link.badgeColor || 'bg-primary'} rounded-pill ms-1.5 px-1.5 py-0.5 small`}>
+                        {link.badge}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

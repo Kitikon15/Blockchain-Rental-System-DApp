@@ -284,20 +284,21 @@ export const SEED_ITEMS = [
 ];
 
 /**
- * Generate historical rental records, binding the user's active wallet
- * as the renter for selected records so their personal history is populated.
+ * Generate historical rental records for demo and ledger auditing.
+ * Uses fixed mock addresses so that personal user rental history
+ * remains strictly isolated to the wallet that actually executed the rental.
  */
-export function getSeedRentals(userAccount) {
-  const currentWallet = userAccount || '0xc7c8b35F368e7E160273a5a40a5015bEc474ED';
+export function getSeedRentals() {
+  const seedDemoWallet = '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65';
   const now = Math.floor(Date.now() / 1000);
 
   const baseRentals = [
-    // 1. Returned & Refunded (Rented by Current User)
+    // 1. Returned & Refunded (Peer demo record)
     {
       rentalId: 101,
       itemId: 1,
       owner: '0x2546BcD3c84621e976D8185a91A922aE77ECEc30',
-      renter: currentWallet,
+      renter: seedDemoWallet,
       startTime: now - 86400 * 14,
       endTime: now - 86400 * 11,
       rentalPrice: parseEther('0.050'),
@@ -309,12 +310,12 @@ export function getSeedRentals(userAccount) {
       status: RENTAL_STATUS.RETURNED,
       createdAt: now - 86400 * 14,
     },
-    // 2. Currently Active Rental (Rented by Current User)
+    // 2. Currently Active Rental (Peer demo record)
     {
       rentalId: 102,
       itemId: 2,
       owner: '0x35D628De2C0637f9e80d216503c805aA8272995D',
-      renter: currentWallet,
+      renter: seedDemoWallet,
       startTime: now - 86400 * 1,
       endTime: now + 86400 * 2,
       rentalPrice: parseEther('0.060'),
@@ -326,12 +327,12 @@ export function getSeedRentals(userAccount) {
       status: RENTAL_STATUS.ACTIVE,
       createdAt: now - 86400 * 1,
     },
-    // 3. Returned & Refunded (Rented by Current User)
+    // 3. Returned & Refunded (Peer demo record)
     {
       rentalId: 103,
       itemId: 3,
       owner: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-      renter: currentWallet,
+      renter: seedDemoWallet,
       startTime: now - 86400 * 9,
       endTime: now - 86400 * 5,
       rentalPrice: parseEther('0.050'),
@@ -377,12 +378,12 @@ export function getSeedRentals(userAccount) {
       status: RENTAL_STATUS.RETURNED,
       createdAt: now - 86400 * 12,
     },
-    // 6. Returned & Refunded (Rented by Current User)
+    // 6. Returned & Refunded (Peer demo record)
     {
       rentalId: 106,
       itemId: 4,
       owner: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
-      renter: currentWallet,
+      renter: seedDemoWallet,
       startTime: now - 86400 * 22,
       endTime: now - 86400 * 19,
       rentalPrice: parseEther('0.080'),
@@ -416,14 +417,36 @@ export function getSeedRentals(userAccount) {
   const dynamicRentals = getStoredUserRentals();
   const statusOverrides = getStoredRentalStatusOverrides();
   const timeOverrides = getStoredRentalTimeOverrides();
+  const cancelOverrides = getStoredRentalCancellationOverrides();
 
   const applyOverrides = (r) => {
     let modified = { ...r };
-    if (statusOverrides[r.rentalId] !== undefined) {
-      modified.status = statusOverrides[r.rentalId];
+    const idKey = Number(r.rentalId);
+    const sOverride =
+      statusOverrides[idKey] !== undefined
+        ? statusOverrides[idKey]
+        : statusOverrides[String(idKey)] !== undefined
+        ? statusOverrides[String(idKey)]
+        : undefined;
+
+    if (sOverride !== undefined) {
+      modified.status = Number(sOverride);
     }
-    if (timeOverrides[r.rentalId]) {
-      const { additionalSeconds, additionalFeeEth } = timeOverrides[r.rentalId];
+
+    const cOverride = cancelOverrides[idKey] || cancelOverrides[String(idKey)] || null;
+    if (cOverride) {
+      modified = { ...modified, ...cOverride };
+    }
+
+    const tOverride = timeOverrides[idKey] || timeOverrides[String(idKey)] || null;
+    if (tOverride) {
+      const { additionalSeconds, additionalFeeEth, startTime, endTime } = tOverride;
+      if (startTime) {
+        modified.startTime = Number(startTime);
+      }
+      if (endTime) {
+        modified.endTime = Number(endTime);
+      }
       if (additionalSeconds) {
         modified.endTime = Number(modified.endTime) + Number(additionalSeconds);
       }
@@ -453,6 +476,7 @@ export function serializeRental(rental) {
     renter: String(rental.renter || ''),
     startTime: Number(rental.startTime || 0),
     endTime: Number(rental.endTime || 0),
+    durationSeconds: Number(rental.durationSeconds || 0),
     rentalPriceEth: String(rental.rentalPriceEth || '0.0500'),
     depositEth: String(rental.depositEth || '0.0500'),
     totalPaidEth: String(rental.totalPaidEth || '0.1000'),
@@ -462,6 +486,15 @@ export function serializeRental(rental) {
     durationValue: Number(rental.durationValue || 1),
     txHash: rental.txHash ? String(rental.txHash) : null,
     isOnChain: Boolean(rental.isOnChain),
+    approvedAt: rental.approvedAt ? Number(rental.approvedAt) : null,
+    approvedBy: rental.approvedBy ? String(rental.approvedBy) : null,
+    approvalTxHash: rental.approvalTxHash ? String(rental.approvalTxHash) : null,
+    cancelRequested: Boolean(rental.cancelRequested),
+    cancelReason: rental.cancelReason ? String(rental.cancelReason) : null,
+    cancelRequestedAt: rental.cancelRequestedAt ? Number(rental.cancelRequestedAt) : null,
+    refundTxHash: rental.refundTxHash ? String(rental.refundTxHash) : null,
+    refundAmountEth: rental.refundAmountEth ? String(rental.refundAmountEth) : null,
+    refundedAt: rental.refundedAt ? Number(rental.refundedAt) : null,
   };
 }
 
@@ -515,6 +548,30 @@ export function getStoredRentalTimeOverrides() {
   }
 }
 
+export function getStoredRentalCancellationOverrides() {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem('blockrental_rental_cancellation_overrides');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export function saveRentalCancellationOverride(rentalId, data) {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = getStoredRentalCancellationOverrides();
+    current[rentalId] = {
+      ...(current[rentalId] || {}),
+      ...data,
+    };
+    localStorage.setItem('blockrental_rental_cancellation_overrides', JSON.stringify(current));
+  } catch (e) {
+    console.error('Could not save cancellation override', e);
+  }
+}
+
 export function saveUserRental(rental) {
   if (typeof window === 'undefined' || !rental) return;
   try {
@@ -526,31 +583,142 @@ export function saveUserRental(rental) {
       'blockrental_dynamic_rentals',
       JSON.stringify(updated, (key, value) => (typeof value === 'bigint' ? value.toString() : value))
     );
+
+    // Sync to server API for cross-client / cross-browser access
+    if (typeof fetch === 'function') {
+      fetch('/api/rentals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'save_rental', rental: cleanRental }),
+      }).catch(() => {});
+    }
   } catch (e) {
     console.error('Could not save user rental to localStorage', e);
   }
 }
 
-export function updateStoredRentalStatus(rentalId, status) {
+export async function updateStoredRentalStatus(rentalId, status, extraData = {}) {
   if (typeof window === 'undefined') return;
   try {
+    const numStatus = Number(status);
+    const id = Number(rentalId);
+
+    // 1. Update dynamic rentals in localStorage
     const existing = getStoredUserRentals();
-    const isDynamic = existing.some((r) => Number(r.rentalId) === Number(rentalId));
+    const isDynamic = existing.some((r) => Number(r.rentalId) === id);
     if (isDynamic) {
       const updated = existing.map((r) => {
-        if (Number(r.rentalId) === Number(rentalId)) {
-          return serializeRental({ ...r, status: Number(status) });
+        if (Number(r.rentalId) === id) {
+          return serializeRental({
+            ...r,
+            ...extraData,
+            status: numStatus,
+          });
         }
         return serializeRental(r);
       });
       localStorage.setItem('blockrental_dynamic_rentals', JSON.stringify(updated));
-    } else {
-      const overrides = getStoredRentalStatusOverrides();
-      overrides[rentalId] = Number(status);
-      localStorage.setItem('blockrental_rental_status_overrides', JSON.stringify(overrides));
+    }
+
+    // 2. ALWAYS record status override so applyOverrides is guaranteed to reflect the status
+    const overrides = getStoredRentalStatusOverrides();
+    overrides[id] = numStatus;
+    overrides[String(id)] = numStatus;
+    localStorage.setItem('blockrental_rental_status_overrides', JSON.stringify(overrides));
+
+    // 3. If startTime or endTime provided (e.g. from owner approval), record in time overrides
+    if (extraData && (extraData.startTime || extraData.endTime)) {
+      const timeOverrides = getStoredRentalTimeOverrides();
+      timeOverrides[id] = {
+        ...(timeOverrides[id] || {}),
+        startTime: extraData.startTime,
+        endTime: extraData.endTime,
+      };
+      timeOverrides[String(id)] = timeOverrides[id];
+      localStorage.setItem('blockrental_rental_time_overrides', JSON.stringify(timeOverrides));
+    }
+
+    // 4. Record cancellation overrides if cancellation data present
+    if (extraData && (extraData.cancelRequested !== undefined || extraData.cancelReason)) {
+      saveRentalCancellationOverride(id, extraData);
+    }
+
+    // 5. Await Sync to server API so other browsers/clients receive the update before next fetch
+    if (typeof fetch === 'function') {
+      const actionType = numStatus === RENTAL_STATUS.ACTIVE ? 'approve' : 'update_status';
+      try {
+        await fetch('/api/rentals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: actionType,
+            rentalId: id,
+            status: numStatus,
+            extraData,
+          }),
+        });
+      } catch (postErr) {
+        console.warn('API sync warning:', postErr.message);
+      }
     }
   } catch (e) {
     console.error('Could not update rental status', e);
+  }
+}
+
+/**
+ * Synchronize rentals and overrides from the server API into client localStorage
+ */
+export async function syncRentalsFromApi() {
+  if (typeof window === 'undefined') return;
+  try {
+    const res = await fetch('/api/rentals', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.success) return;
+
+    // 1. Sync dynamic rentals (preserve local ACTIVE or CANCELLED status over server PENDING)
+    if (Array.isArray(data.rentals) && data.rentals.length > 0) {
+      const existing = getStoredUserRentals();
+      const map = new Map();
+      existing.forEach((r) => map.set(Number(r.rentalId), r));
+      data.rentals.forEach((r) => {
+        const id = Number(r.rentalId);
+        const local = map.get(id);
+        // If locally active or cancelled, don't let stale server pending override it
+        if (local && Number(local.status) !== RENTAL_STATUS.PENDING && Number(r.status) === RENTAL_STATUS.PENDING) {
+          return;
+        }
+        map.set(id, serializeRental(r));
+      });
+      localStorage.setItem(
+        'blockrental_dynamic_rentals',
+        JSON.stringify(Array.from(map.values()))
+      );
+    }
+
+    // 2. Sync status overrides: Server state takes authoritative precedence for multi-client synchronization
+    if (data.statusOverrides && Object.keys(data.statusOverrides).length > 0) {
+      const localStatusOverrides = getStoredRentalStatusOverrides();
+      const merged = { ...localStatusOverrides, ...data.statusOverrides };
+      localStorage.setItem('blockrental_rental_status_overrides', JSON.stringify(merged));
+    }
+
+    // 3. Sync time overrides: Server state takes authoritative precedence
+    if (data.timeOverrides && Object.keys(data.timeOverrides).length > 0) {
+      const localTimeOverrides = getStoredRentalTimeOverrides();
+      const mergedTimes = { ...localTimeOverrides, ...data.timeOverrides };
+      localStorage.setItem('blockrental_rental_time_overrides', JSON.stringify(mergedTimes));
+    }
+
+    // 4. Sync cancellation overrides: Server state takes authoritative precedence
+    if (data.cancelOverrides && Object.keys(data.cancelOverrides).length > 0) {
+      const localCancel = getStoredRentalCancellationOverrides();
+      const mergedCancel = { ...localCancel, ...data.cancelOverrides };
+      localStorage.setItem('blockrental_rental_cancellation_overrides', JSON.stringify(mergedCancel));
+    }
+  } catch (_) {
+    // Silent catch
   }
 }
 
@@ -590,6 +758,35 @@ export function extendRentalTime(rentalId, additionalSeconds, additionalFeeEth =
   }
 }
 
+/**
+ * Clear all local test rentals and status overrides to reset testing state.
+ * Restores availability of dynamic items registered by users.
+ */
+export function clearAllTestRentals() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('blockrental_dynamic_rentals');
+    localStorage.removeItem('blockrental_rental_status_overrides');
+    localStorage.removeItem('blockrental_rental_time_overrides');
+    localStorage.removeItem('blockrental_rental_cancellation_overrides');
+    localStorage.removeItem('blockrental_item_overrides');
+
+    const rawItems = localStorage.getItem('blockrental_dynamic_items');
+    if (rawItems) {
+      try {
+        const items = JSON.parse(rawItems);
+        if (Array.isArray(items)) {
+          const restored = items.map((i) => ({ ...i, available: true }));
+          localStorage.setItem('blockrental_dynamic_items', JSON.stringify(restored));
+        }
+      } catch (_) {}
+    }
+  } catch (e) {
+    console.error('Could not clear test rentals:', e);
+  }
+}
+
+
 export function getStoredItemOverrides() {
   if (typeof window === 'undefined') return {};
   try {
@@ -611,6 +808,42 @@ export function saveItemAvailabilityOverride(itemId, available) {
   }
 }
 
+export function getStoredUserItems() {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('blockrental_dynamic_items');
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveUserItem(item) {
+  if (typeof window === 'undefined' || !item) return;
+  try {
+    const existing = getStoredUserItems();
+    const filtered = existing.filter((i) => Number(i.itemId) !== Number(item.itemId));
+    const cleanItem = {
+      itemId: Number(item.itemId),
+      owner: String(item.owner || ''),
+      name: String(item.name || ''),
+      description: String(item.description || ''),
+      category: String(item.category || 'General'),
+      rentalPriceEth: String(item.rentalPriceEth || '0.0500'),
+      depositEth: String(item.depositEth || '0.0500'),
+      available: item.available !== undefined ? Boolean(item.available) : true,
+      createdAt: Number(item.createdAt || Math.floor(Date.now() / 1000)),
+      isOnChain: Boolean(item.isOnChain),
+    };
+    const updated = [cleanItem, ...filtered];
+    localStorage.setItem('blockrental_dynamic_items', JSON.stringify(updated));
+  } catch (e) {
+    console.error('Could not save user item to localStorage', e);
+  }
+}
+
 export function getSeedItems(userAccount) {
   const overrides = getStoredItemOverrides();
   return SEED_ITEMS.map((item) => {
@@ -623,36 +856,66 @@ export function getSeedItems(userAccount) {
 }
 
 /**
- * Merge on-chain items with seed items (on-chain items always take precedence)
+ * Merge on-chain items with user-registered items and seed items
  */
 export function mergeItemsWithSeed(onChainItems, userAccount) {
   const seedItems = getSeedItems(userAccount);
+  const dynamicItems = getStoredUserItems();
+  const overrides = getStoredItemOverrides();
+
+  // Apply availability overrides to dynamic items as well
+  const modifiedDynamic = dynamicItems.map((item) => {
+    let mod = { ...item };
+    if (overrides[item.itemId] !== undefined) {
+      mod.available = overrides[item.itemId];
+    }
+    return mod;
+  });
+
+  const combinedCatalog = [...modifiedDynamic, ...seedItems];
   if (Array.isArray(onChainItems) && onChainItems.length > 0) {
     const onChainIds = new Set(onChainItems.map((i) => Number(i.itemId)));
-    const remainingSeed = seedItems.filter((i) => !onChainIds.has(Number(i.itemId)));
-    return [...onChainItems, ...remainingSeed];
+    const remainingCatalog = combinedCatalog.filter((i) => !onChainIds.has(Number(i.itemId)));
+    return [...onChainItems, ...remainingCatalog];
   }
-  return seedItems;
+  return combinedCatalog;
 }
 
 export function mergeRentalsWithSeed(onChainRentals, userAccount) {
   const seedRentals = getSeedRentals(userAccount);
   const statusOverrides = getStoredRentalStatusOverrides();
   const timeOverrides = getStoredRentalTimeOverrides();
+  const cancelOverrides = getStoredRentalCancellationOverrides();
 
   const applyOverrides = (r) => {
     let modified = { ...r };
-    if (statusOverrides[r.rentalId] !== undefined) {
-      modified.status = statusOverrides[r.rentalId];
+    const idKey = Number(r.rentalId);
+    const sOverride =
+      statusOverrides[idKey] !== undefined
+        ? statusOverrides[idKey]
+        : statusOverrides[String(idKey)] !== undefined
+        ? statusOverrides[String(idKey)]
+        : undefined;
+
+    if (sOverride !== undefined) {
+      modified.status = Number(sOverride);
     }
-    if (timeOverrides[r.rentalId]) {
-      const { additionalSeconds, additionalFeeEth } = timeOverrides[r.rentalId];
-      if (additionalSeconds) {
-        modified.endTime = Number(modified.endTime) + Number(additionalSeconds);
+
+    const cOverride = cancelOverrides[idKey] || cancelOverrides[String(idKey)] || null;
+    if (cOverride) {
+      modified = { ...modified, ...cOverride };
+    }
+
+    const tOverride = timeOverrides[idKey] || timeOverrides[String(idKey)] || null;
+    if (tOverride) {
+      if (tOverride.startTime) modified.startTime = Number(tOverride.startTime);
+      if (tOverride.endTime) modified.endTime = Number(tOverride.endTime);
+      if (tOverride.additionalSeconds) {
+        modified.endTime = Number(modified.endTime) + Number(tOverride.additionalSeconds);
       }
-      if (additionalFeeEth && parseFloat(additionalFeeEth) > 0) {
+      if (tOverride.additionalFeeEth && parseFloat(tOverride.additionalFeeEth) > 0) {
         const currentPaid = parseFloat(modified.totalPaidEth || '0');
-        const newPaid = (currentPaid + parseFloat(additionalFeeEth)).toFixed(4);
+        const newPaid = (currentPaid + parseFloat(tOverride.additionalFeeEth)).toFixed(4);
         modified.totalPaidEth = newPaid;
         try {
           modified.totalPaid = parseEther(newPaid);
@@ -668,5 +931,5 @@ export function mergeRentalsWithSeed(onChainRentals, userAccount) {
     const remainingSeed = seedRentals.filter((r) => !onChainIds.has(Number(r.rentalId)));
     return [...overriddenOnChain, ...remainingSeed];
   }
-  return seedRentals;
+  return seedRentals.map(applyOverrides);
 }

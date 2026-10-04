@@ -9,9 +9,11 @@ import {
   fetchAllItems,
   returnItemOnChain,
   cancelRentalOnChain,
+  requestRentalCancellationOnChain,
   extendRentalOnChain,
   isContractConfigured,
   parseContractError,
+  clearAllTestRentals,
 } from '../../lib/contract';
 import { RENTAL_STATUS, DEFAULT_EXPLORER_URL } from '../../lib/constants';
 import RentalCard from '../../components/RentalCard';
@@ -28,7 +30,7 @@ import { formatAddress, formatDateTime } from '../../lib/wallet';
  * and comprehensive completed rental transaction history with i18n support.
  */
 export default function MyRentalsPage() {
-  const { account, isSepolia, connect, switchNetwork } = useWallet();
+  const { account, isSepolia, connect, switchNetwork, switchAccount } = useWallet();
   const { t, language } = useLanguage();
 
   const [myRentals, setMyRentals] = useState([]);
@@ -36,12 +38,29 @@ export default function MyRentalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Status Filter: 'ACTIVE' | 'RETURNED' | 'ALL' | 'CANCELLED'
+  // Status Filter: 'ACTIVE' | 'CANCEL_REQUESTED' | 'RETURNED' | 'ALL' | 'CANCELLED'
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
+
+  // Reset Test Rentals Modal State
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState(null);
+
+  const handleResetTestRentals = () => {
+    clearAllTestRentals();
+    setResetConfirmOpen(false);
+    setResetFeedback(
+      language === 'th'
+        ? 'ล้างข้อมูลประวัติการเช่าทดสอบทั้งหมดเรียบร้อยแล้ว'
+        : 'All local test rentals have been reset successfully'
+    );
+    loadUserRentals();
+    setTimeout(() => setResetFeedback(null), 3500);
+  };
 
   // Return & Cancel Action Modals State
   const [actionRental, setActionRental] = useState(null);
   const [actionType, setActionType] = useState(null); // 'RETURN' | 'CANCEL'
+  const [cancelReason, setCancelReason] = useState('');
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
 
   // Extend Rental Modal State
@@ -65,6 +84,7 @@ export default function MyRentalsPage() {
 
   const loadUserRentals = useCallback(async () => {
     if (!contractConfigured || !account) {
+      setMyRentals([]);
       setLoading(false);
       return;
     }
@@ -95,6 +115,11 @@ export default function MyRentalsPage() {
     }
   }, [contractConfigured, account]);
 
+  // Immediate reset when switching accounts
+  useEffect(() => {
+    setMyRentals([]);
+  }, [account]);
+
   // Auto-Sync state for real-time live updates
   const [autoSync, setAutoSync] = useState(true);
 
@@ -123,6 +148,7 @@ export default function MyRentalsPage() {
   const handleOpenActionModal = (rental, type) => {
     setActionRental(rental);
     setActionType(type);
+    setCancelReason('');
     setIsActionModalOpen(true);
     setTxState(null);
     setTxHash(null);
@@ -146,7 +172,8 @@ export default function MyRentalsPage() {
       if (actionType === 'RETURN') {
         result = await returnItemOnChain(actionRental.rentalId);
       } else if (actionType === 'CANCEL') {
-        result = await cancelRentalOnChain(actionRental.rentalId);
+        // Submit cancellation request to owner for approval and refund
+        result = await requestRentalCancellationOnChain(actionRental.rentalId, cancelReason);
       }
 
       setTxHash(result.hash);
@@ -230,16 +257,26 @@ export default function MyRentalsPage() {
 
   // Financial summary metrics
   const activeRentals = myRentals.filter((r) => r.status === RENTAL_STATUS.ACTIVE);
+  const pendingRentals = myRentals.filter((r) => r.status === RENTAL_STATUS.PENDING);
+  const cancelRequestedRentals = myRentals.filter((r) => r.status === RENTAL_STATUS.CANCEL_REQUESTED);
   const completedRentals = myRentals.filter(
     (r) => r.status === RENTAL_STATUS.RETURNED || r.status === RENTAL_STATUS.COMPLETED
   );
   const cancelledRentals = myRentals.filter((r) => r.status === RENTAL_STATUS.CANCELLED);
 
+  // Items currently in possession or pending approval
+  const currentlyRentedList = myRentals.filter(
+    (r) =>
+      r.status === RENTAL_STATUS.ACTIVE ||
+      r.status === RENTAL_STATUS.PENDING ||
+      r.status === RENTAL_STATUS.CANCEL_REQUESTED
+  );
+
   const totalSpentEth = myRentals.reduce(
     (acc, r) => acc + (parseFloat(r.totalPaidEth) || 0),
     0
   );
-  const activeLockedDepositEth = activeRentals.reduce(
+  const activeLockedDepositEth = [...activeRentals, ...pendingRentals, ...cancelRequestedRentals].reduce(
     (acc, r) => acc + (parseFloat(r.depositEth) || 0),
     0
   );
@@ -252,6 +289,8 @@ export default function MyRentalsPage() {
   const filteredRentals = myRentals.filter((r) => {
     if (statusFilter === 'ALL') return true;
     if (statusFilter === 'ACTIVE') return r.status === RENTAL_STATUS.ACTIVE;
+    if (statusFilter === 'PENDING') return r.status === RENTAL_STATUS.PENDING;
+    if (statusFilter === 'CANCEL_REQUESTED') return r.status === RENTAL_STATUS.CANCEL_REQUESTED;
     if (statusFilter === 'RETURNED')
       return r.status === RENTAL_STATUS.RETURNED || r.status === RENTAL_STATUS.COMPLETED;
     if (statusFilter === 'CANCELLED') return r.status === RENTAL_STATUS.CANCELLED;
@@ -313,6 +352,64 @@ export default function MyRentalsPage() {
         </div>
       ) : (
         <>
+          {/* Active Wallet Account Banner & Fast Switch */}
+          <div className="card shadow-sm border bg-white rounded-3 mb-4 p-3 border-start border-primary border-4">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center"
+                  style={{ width: '44px', height: '44px', minWidth: '44px' }}
+                >
+                  <i className="bi bi-person-badge fs-4"></i>
+                </div>
+                <div>
+                  <div className="d-flex flex-wrap align-items-center gap-2">
+                    <span className="fw-bold text-dark">
+                      {language === 'th' ? 'บัญชีผู้เช่าที่กำลังเชื่อมต่อ:' : 'Active Connected Renter:'}
+                    </span>
+                    <span className="badge bg-primary font-monospace px-2.5 py-1">
+                      {account}
+                    </span>
+                  </div>
+                  <div className="small text-muted mt-0.5">
+                    {language === 'th'
+                      ? 'รายการเช่าจะแสดงเฉพาะของกระเป๋านี้เท่านั้น หากต้องการเช็คของอีกบัญชี (เช่น Account 1 หรือ 2) ให้กดปุ่ม "สลับบัญชี"'
+                      : 'Rental records are strictly isolated to this address. Switch account in MetaMask to view other rentals.'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="d-flex flex-wrap align-items-center gap-2">
+                <button
+                  type="button"
+                  onClick={switchAccount}
+                  className="btn btn-outline-primary btn-sm fw-semibold rounded-pill px-3 py-1.5 d-flex align-items-center"
+                  title="เปิดหน้าต่าง MetaMask เพื่อเลือกสลับบัญชี (Account 1 / Account 2)"
+                >
+                  <i className="bi bi-arrow-left-right me-1.5"></i>
+                  {language === 'th' ? 'สลับบัญชีใน MetaMask' : 'Switch Account'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setResetConfirmOpen(true)}
+                  className="btn btn-outline-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center"
+                  title="ล้างข้อมูลประวัติการเช่าทดสอบเก่าทั้งหมดออกจากเบราว์เซอร์ เพื่อเริ่มทดสอบใหม่จาก 0"
+                >
+                  <i className="bi bi-trash3 me-1.5"></i>
+                  {language === 'th' ? 'ล้างประวัติทดสอบ (Reset)' : 'Reset Test Data'}
+                </button>
+              </div>
+            </div>
+
+            {resetFeedback && (
+              <div className="alert alert-success py-1.5 px-3 small mt-3 mb-0 rounded-2 d-flex align-items-center animate__animated animate__fadeIn">
+                <i className="bi bi-check-circle-fill me-2"></i>
+                <span>{resetFeedback}</span>
+              </div>
+            )}
+          </div>
+
           {/* Financial & Deposit Summary Bar */}
           <div className="row g-3 mb-4">
             <div className="col-6 col-md-3">
@@ -359,6 +456,223 @@ export default function MyRentalsPage() {
           {/* Global Error Banner */}
           {error && <ErrorMessage error={error} onRetry={loadUserRentals} />}
 
+          {/* Pending Rentals Awaiting Owner Approval Banner */}
+          {pendingRentals.length > 0 && (
+            <div className="alert alert-warning border border-warning-subtle shadow-sm rounded-3 mb-4 d-flex align-items-center gap-3">
+              <div
+                className="rounded-circle bg-warning text-dark p-2 d-flex align-items-center justify-content-center"
+                style={{ width: '42px', height: '42px', minWidth: '42px' }}
+              >
+                <i className="bi bi-clock-history fs-5"></i>
+              </div>
+              <div className="flex-grow-1">
+                <div className="fw-bold text-dark">
+                  {language === 'th'
+                    ? `คุณมี ${pendingRentals.length} รายการที่กำลังรอเจ้าของอนุมัติการเช่า`
+                    : `You have ${pendingRentals.length} rental request(s) awaiting owner approval`}
+                </div>
+                <div className="small text-muted">
+                  {language === 'th'
+                    ? 'เงินค่าเช่าและเงินมัดจำถูกพักไว้ในระบบอย่างปลอดภัย เมื่อเจ้าของอุปกรณ์ตรวจสอบและกดยืนยันอนุมัติ เวลาการเช่าจะเริ่มนับถอยหลังทันที'
+                    : 'Rental fee and deposit are securely held in escrow. Countdown begins automatically once approved by the owner.'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Active Rentals Hub - ส่วนที่คนเช่าสามารถเช็คสถานะว่าตอนนี้เราเช่าแล้วและมีข้อมูลที่เราเช่าอยู่ */}
+          <div className="card shadow-sm border bg-white rounded-3 mb-4 overflow-hidden">
+            <div
+              className="card-header py-3 px-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
+              style={{
+                background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                color: '#fff',
+              }}
+            >
+              <div className="d-flex align-items-center gap-2">
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center bg-primary text-white"
+                  style={{ width: '32px', height: '32px' }}
+                >
+                  <i className="bi bi-box-seam-fill small"></i>
+                </div>
+                <div>
+                  <h5 className="mb-0 fw-bold fs-6">
+                    {language === 'th'
+                      ? 'ข้อมูลทรัพย์สินที่คุณกำลังเช่าอยู่ในปัจจุบัน (Active Rentals Hub)'
+                      : 'Your Current Active Rentals & Status'}
+                  </h5>
+                  <small className="text-light-emphasis small" style={{ fontSize: '0.8rem', opacity: 0.85 }}>
+                    {language === 'th'
+                      ? 'เช็คสถานะการเช่า ข้อมูลทรัพย์สิน กำหนดส่งคืน และเวลาคงเหลือแบบเรียลไทม์'
+                      : 'Check your active rentals, agreement specs, return deadline, and live countdown'}
+                  </small>
+                </div>
+              </div>
+              <span className="badge bg-primary-subtle text-info border border-info-subtle px-2.5 py-1 font-monospace">
+                {currentlyRentedList.length} {language === 'th' ? 'รายการกำลังเช่า/รออนุมัติ' : 'Active Items'}
+              </span>
+            </div>
+
+            <div className="card-body p-3">
+              {currentlyRentedList.length === 0 ? (
+                <div className="text-center py-3 text-muted">
+                  <i className="bi bi-check2-circle text-success fs-3 mb-1 d-block"></i>
+                  <h6 className="fw-bold text-dark mb-1">
+                    {language === 'th' ? 'ขณะนี้คุณไม่มีทรัพย์สินที่อยู่ในสถานะกำลังเช่า' : 'You have no items currently in active rental'}
+                  </h6>
+                  <p className="small mb-2 text-muted">
+                    {language === 'th'
+                      ? 'เมื่อคุณทำสัญญาเช่าอุปกรณ์ ข้อมูลสัญญา วันที่เริ่ม-สิ้นสุด และเวลานับถอยหลังจะแสดงที่นี่'
+                      : 'When you rent an item, its active status, specs, countdown, and controls will appear right here.'}
+                  </p>
+                  <Link href="/rentals" className="btn btn-outline-primary btn-sm rounded-pill px-3">
+                    <i className="bi bi-grid me-1"></i> {language === 'th' ? 'ค้นหาทรัพย์สินเพื่อเริ่มเช่า' : 'Browse Available Items'}
+                  </Link>
+                </div>
+              ) : (
+                <div className="row g-3">
+                  {currentlyRentedList.map((rental) => {
+                    const item = itemsMap[rental.itemId];
+                    const isCancelRequested = rental.status === RENTAL_STATUS.CANCEL_REQUESTED;
+
+                    return (
+                      <div key={`active-${rental.rentalId}`} className="col-12 col-lg-6">
+                        <div className={`p-3 rounded-3 border h-100 ${isCancelRequested ? 'bg-warning-subtle border-warning' : 'bg-light border-primary-subtle'}`}>
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                              <span className="badge bg-dark font-monospace me-1.5">
+                                #{rental.rentalId}
+                              </span>
+                              <span className="badge bg-secondary-subtle text-secondary small">
+                                {language === 'th' ? `อุปกรณ์ #${rental.itemId}` : `Item #${rental.itemId}`}
+                              </span>
+                            </div>
+                            <RentalStatus status={rental.status} />
+                          </div>
+
+                          <h6 className="fw-bold text-dark mb-1 text-truncate" title={item?.name}>
+                            {item?.name || `Item #${rental.itemId}`}
+                          </h6>
+
+                          {/* Countdown Timer */}
+                          <div className="d-flex align-items-center justify-content-between bg-white p-2 rounded border mb-2 small">
+                            <span className="text-muted fw-semibold">
+                              <i className="bi bi-broadcast text-primary me-1"></i>
+                              {language === 'th' ? 'นับถอยหลังสัญญา:' : 'Live Timer:'}
+                            </span>
+                            <RentalCountdown
+                              startTime={rental.startTime}
+                              endTime={rental.endTime}
+                              status={rental.status}
+                            />
+                          </div>
+
+                          {/* Schedule info */}
+                          <div className="bg-white p-2 rounded border mb-2 small font-monospace">
+                            <div className="d-flex justify-content-between text-muted">
+                              <span>{language === 'th' ? 'เริ่มต้น:' : 'Start:'}</span>
+                              <span className="text-dark">
+                                {rental.status === RENTAL_STATUS.PENDING
+                                  ? (language === 'th' ? 'รอเจ้าของอนุมัติการเช่า' : 'Pending Owner Approval')
+                                  : formatDateTime(rental.startTime, language, true)}
+                              </span>
+                            </div>
+                            <div className="d-flex justify-content-between text-muted">
+                              <span>{language === 'th' ? 'กำหนดส่งคืน:' : 'Due Date:'}</span>
+                              <span className={rental.status === RENTAL_STATUS.PENDING ? 'text-muted' : 'text-danger fw-bold'}>
+                                {rental.status === RENTAL_STATUS.PENDING
+                                  ? `${rental.durationValue || 1} ${rental.durationUnit || 'days'}`
+                                  : formatDateTime(rental.endTime, language, true)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Payment details */}
+                          <div className="d-flex justify-content-between small text-muted mb-2 px-1">
+                            <span>{language === 'th' ? 'ยอดชำระรวม:' : 'Total Paid:'} <strong className="text-primary font-monospace">{rental.totalPaidEth} ETH</strong></span>
+                            <span>{language === 'th' ? 'มัดจำที่รอคืน:' : 'Deposit:'} <strong className="text-success font-monospace">+{rental.depositEth} ETH</strong></span>
+                          </div>
+
+                          {/* Owner Address */}
+                          <div className="small text-muted mb-3 px-1 d-flex justify-content-between">
+                            <span>{language === 'th' ? 'เจ้าของ:' : 'Owner:'}</span>
+                            <a
+                              href={`${explorerBase}/address/${rental.owner}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-monospace text-secondary text-decoration-none"
+                            >
+                              {formatAddress(rental.owner)} <i className="bi bi-box-arrow-up-right small"></i>
+                            </a>
+                          </div>
+
+                          {/* Action Buttons for active rental */}
+                          <div className="d-flex flex-wrap gap-2 pt-2 border-top">
+                            <Link
+                              href={`/rentals/${rental.itemId}`}
+                              className="btn btn-outline-secondary btn-sm"
+                            >
+                              <i className="bi bi-eye"></i> {language === 'th' ? 'ดูของ' : 'Specs'}
+                            </Link>
+
+                            {rental.status === RENTAL_STATUS.PENDING ? (
+                              <div className="alert alert-warning py-1.5 px-2.5 small mb-0 w-100 d-flex align-items-center justify-content-between">
+                                <span>
+                                  <i className="bi bi-clock-history me-1 text-warning"></i>
+                                  {language === 'th'
+                                    ? 'รอเจ้าของอนุมัติการเช่า (เวลานับเมื่ออนุมัติ)'
+                                    : 'Awaiting owner approval (Timer starts once approved)'}
+                                </span>
+                              </div>
+                            ) : !isCancelRequested ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenExtendModal(rental)}
+                                  className="btn btn-primary btn-sm flex-grow-1"
+                                >
+                                  <i className="bi bi-clock-history me-1"></i>
+                                  {language === 'th' ? 'ต่อเวลา' : 'Extend'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenActionModal(rental, 'RETURN')}
+                                  className="btn btn-success btn-sm flex-grow-1"
+                                >
+                                  <i className="bi bi-arrow-return-left me-1"></i>
+                                  {language === 'th' ? 'ส่งคืนของ' : 'Return'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenActionModal(rental, 'CANCEL')}
+                                  className="btn btn-outline-danger btn-sm"
+                                  title={language === 'th' ? 'ส่งคำขอยกเลิกสัญญาให้เจ้าของอนุมัติ' : 'Request cancellation'}
+                                >
+                                  <i className="bi bi-x-circle me-1"></i>
+                                  {language === 'th' ? 'ขอยกเลิก' : 'Cancel'}
+                                </button>
+                              </>
+                            ) : (
+                              <div className="alert alert-warning py-1.5 px-2.5 small mb-0 w-100 d-flex align-items-center justify-content-between">
+                                <span>
+                                  <i className="bi bi-hourglass-split me-1 text-warning"></i>
+                                  {language === 'th'
+                                    ? `ส่งคำขอยกเลิกแล้ว รอเจ้าของอนุมัติ & โอนคืน ${rental.totalPaidEth || rental.depositEth} ETH`
+                                    : `Cancellation requested, awaiting owner refund`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Filter Status Tabs */}
           <div className="card shadow-sm border mb-4 bg-white rounded-3">
             <div className="card-body p-2.5 d-flex flex-wrap gap-2">
@@ -368,6 +682,20 @@ export default function MyRentalsPage() {
               >
                 <i className="bi bi-broadcast me-1"></i>
                 {t('myRentals.tabActive')} ({activeRentals.length})
+              </button>
+              <button
+                className={`btn btn-sm rounded-pill px-3 fw-medium ${statusFilter === 'PENDING' ? 'btn-warning text-dark shadow-sm' : 'btn-light'}`}
+                onClick={() => setStatusFilter('PENDING')}
+              >
+                <i className="bi bi-clock-history me-1"></i>
+                {language === 'th' ? 'รอเจ้าของอนุมัติการเช่า' : 'Pending Approval'} ({pendingRentals.length})
+              </button>
+              <button
+                className={`btn btn-sm rounded-pill px-3 fw-medium ${statusFilter === 'CANCEL_REQUESTED' ? 'btn-warning text-dark shadow-sm' : 'btn-light'}`}
+                onClick={() => setStatusFilter('CANCEL_REQUESTED')}
+              >
+                <i className="bi bi-hourglass-split me-1"></i>
+                {language === 'th' ? 'รอเจ้าของอนุมัติยกเลิก' : 'Awaiting Approval'} ({cancelRequestedRentals.length})
               </button>
               <button
                 className={`btn btn-sm rounded-pill px-3 fw-medium ${statusFilter === 'RETURNED' ? 'btn-success shadow-sm' : 'btn-light'}`}
@@ -612,29 +940,44 @@ export default function MyRentalsPage() {
                     </div>
                   ) : (
                     <div>
-                      <p className="text-dark mb-3">
+                      <p className="text-dark mb-2">
                         {language === 'th'
-                          ? 'คุณต้องการยกเลิกสัญญาเช่าและขอรับเงินมัดจำคืนสำหรับ'
-                          : 'Are you sure you want to cancel and refund deposit for'}{' '}
+                          ? 'คุณกำลังจะส่งคำขอยกเลิกสัญญาเช่าหมายเลข'
+                          : 'You are submitting a cancellation request for'}{' '}
                         <strong>#{actionRental.rentalId}</strong> (
-                        {language === 'th' ? `ทรัพย์สิน #${actionRental.itemId}` : `Item #${actionRental.itemId}`})?
+                        {itemsMap[actionRental.itemId]?.name || (language === 'th' ? `ทรัพย์สิน #${actionRental.itemId}` : `Item #${actionRental.itemId}`)})
                       </p>
 
-                      <div className="border border-danger-subtle bg-danger-subtle p-3 rounded-3 mb-3 small">
-                        <div className="d-flex justify-content-between mb-1">
+                      <div className="border border-warning-subtle bg-warning-subtle p-3 rounded-3 mb-3 small">
+                        <div className="d-flex justify-content-between mb-1.5">
                           <span className="text-dark fw-medium">
-                            {language === 'th' ? 'เงินมัดจำที่จะได้รับคืนทันที:' : 'Deposit Refunded to Wallet:'}
+                            {language === 'th' ? 'ยอดเงินที่จะได้รับคืนเมื่อเจ้าของอนุมัติ:' : 'Refund Amount upon Owner Approval:'}
                           </span>
                           <span className="fw-bold font-monospace text-success fs-6">
-                            +{actionRental.depositEth} ETH
+                            +{actionRental.totalPaidEth || actionRental.depositEth} ETH
                           </span>
                         </div>
                         <div className="text-secondary small mt-2">
-                          <i className="bi bi-shield-check text-success me-1"></i>
+                          <i className="bi bi-info-circle-fill text-warning me-1"></i>
                           {language === 'th'
-                            ? 'เมื่อยืนยันใน MetaMask ระบบจะสั่งให้ Smart Contract โอนเงินมัดจำความเสียหายคืนเข้ากระเป๋าของคุณทันที และเปลี่ยนสถานะทรัพย์สินให้พร้อมเช่าอีกครั้ง'
-                            : 'Upon confirmation in MetaMask, the Smart Contract unlocks and refunds your deposit directly to your wallet.'}
+                            ? 'ระบบการยกเลิก: เมื่อคุณกดยืนยัน คำขอจะถูกส่งไปยังเจ้าของทรัพย์สิน และรอให้เจ้าของกดอนุมัติการยกเลิกพร้อมทำธุรกรรมโอนคืนยอดค่าเช่า/มัดจำเข้ากระเป๋าของคุณ'
+                            : 'Cancellation Policy: Upon submitting this request, it will be forwarded to the asset owner for review. Once approved, the owner will execute the refund back to your wallet.'}
                         </div>
+                      </div>
+
+                      {/* Optional reason */}
+                      <div className="mb-2">
+                        <label className="form-label small fw-bold text-dark">
+                          {language === 'th' ? 'ระบุเหตุผลในการขอยกเลิก (ถ้ามี):' : 'Cancellation Reason (Optional):'}
+                        </label>
+                        <textarea
+                          className="form-control form-control-sm"
+                          rows="2"
+                          placeholder={language === 'th' ? 'เช่น ส่งของคืนแล้ว, เปลี่ยนใจ, ไม่สะดวกใช้งาน...' : 'e.g. Returned early, changed schedule, etc.'}
+                          value={cancelReason}
+                          onChange={(e) => setCancelReason(e.target.value)}
+                          disabled={isProcessing}
+                        ></textarea>
                       </div>
                     </div>
                   )}
@@ -658,11 +1001,11 @@ export default function MyRentalsPage() {
                     {isProcessing ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        {language === 'th' ? 'กำลังเซ็นใน MetaMask...' : 'Signing in MetaMask...'}
+                        {language === 'th' ? 'กำลังส่งคำขอใน MetaMask...' : 'Submitting in MetaMask...'}
                       </>
                     ) : txState === 'confirmed' ? (
                       <>
-                        <i className="bi bi-check-circle me-1"></i> {t('myRentals.processedBadge')}
+                        <i className="bi bi-check-circle me-1"></i> {language === 'th' ? 'ส่งคำขอสำเร็จแล้ว' : 'Request Submitted'}
                       </>
                     ) : actionType === 'RETURN' ? (
                       <>
@@ -670,7 +1013,7 @@ export default function MyRentalsPage() {
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-x-circle me-1"></i> {language === 'th' ? 'ยืนยันยกเลิก & รับเงินมัดจำคืน' : 'Confirm Cancel & Refund'}
+                        <i className="bi bi-send me-1"></i> {language === 'th' ? 'ยืนยันส่งคำขอยกเลิกถึงเจ้าของ' : 'Submit Cancellation Request'}
                       </>
                     )}
                   </button>
@@ -853,6 +1196,64 @@ export default function MyRentalsPage() {
             </div>
           </div>
           <div className="modal-backdrop fade show"></div>
+        </>
+      )}
+
+      {/* Reset Test Rentals Confirmation Modal */}
+      {resetConfirmOpen && (
+        <>
+          <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 1060 }}>
+            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '440px' }}>
+              <div className="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+                <div className="modal-header bg-danger text-white py-3">
+                  <h6 className="modal-title fw-bold d-flex align-items-center">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    {language === 'th' ? 'ยืนยันล้างข้อมูลประวัติการเช่าทดสอบ' : 'Confirm Reset Test Rentals'}
+                  </h6>
+                  <button
+                    type="button"
+                    className="btn-close btn-close-white"
+                    onClick={() => setResetConfirmOpen(false)}
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body p-4 text-center">
+                  <div
+                    className="rounded-circle bg-danger-subtle text-danger mx-auto mb-3 d-flex align-items-center justify-content-center"
+                    style={{ width: '56px', height: '56px' }}
+                  >
+                    <i className="bi bi-trash3-fill fs-3"></i>
+                  </div>
+                  <h6 className="fw-bold text-dark mb-2">
+                    {language === 'th' ? 'ล้างประวัติการเช่าทดสอบทั้งหมด?' : 'Reset all local test rental data?'}
+                  </h6>
+                  <p className="text-muted small mb-0">
+                    {language === 'th'
+                      ? 'ระบบจะลบประวัติการเช่าทดสอบในเครื่องทั้งหมด และคืนสถานะอุปกรณ์ที่เคยเช่าไว้ให้กลับมา "พร้อมให้เช่า" เพื่อให้คุณสามารถทดสอบเช่าใหม่ได้ตั้งแต่ต้น'
+                      : 'This will clear all local test rental records and restore item availability, allowing you to run clean end-to-end rental tests.'}
+                  </p>
+                </div>
+                <div className="modal-footer bg-light py-2.5 d-flex justify-content-end gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary rounded-3"
+                    onClick={() => setResetConfirmOpen(false)}
+                  >
+                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger fw-bold rounded-3 px-3.5"
+                    onClick={handleResetTestRentals}
+                  >
+                    <i className="bi bi-trash3 me-1.5"></i>
+                    {language === 'th' ? 'ยืนยันล้างข้อมูล' : 'Confirm Reset'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1055 }}></div>
         </>
       )}
     </div>

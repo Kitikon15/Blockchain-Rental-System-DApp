@@ -30,7 +30,7 @@ import TransactionStatus from '../../components/TransactionStatus';
  * and dispute proof with interactive agreement selection (dropdown & card picker).
  */
 export default function ClaimsPage() {
-  const { account } = useWallet();
+  const { account, connect } = useWallet();
   const { t, language } = useLanguage();
 
   const [searchId, setSearchId] = useState('');
@@ -43,6 +43,8 @@ export default function ClaimsPage() {
   const [availableRentals, setAvailableRentals] = useState([]);
   const [itemMap, setItemMap] = useState({});
   const [statusFilter, setStatusFilter] = useState('ALL');
+  // View Scope: 'MY_RENTALS' (default - show only user's rentals) | 'ALL_SYSTEM'
+  const [viewScope, setViewScope] = useState('MY_RENTALS');
 
   // Real-time synchronization
   const [autoSync, setAutoSync] = useState(true);
@@ -353,10 +355,32 @@ export default function ClaimsPage() {
     return { myRentals: mine, otherRentals: others };
   }, [availableRentals, account]);
 
+  // Selected scope of rentals to display in selectors
+  const scopedRentals = useMemo(() => {
+    if (viewScope === 'MY_RENTALS') {
+      return account ? myRentals : [];
+    }
+    return availableRentals;
+  }, [viewScope, account, myRentals, availableRentals]);
+
+  // Counts for status filters within current scope
+  const statusCounts = useMemo(() => {
+    return {
+      all: scopedRentals.length,
+      pending: scopedRentals.filter((r) => Number(r.status) === RENTAL_STATUS.PENDING).length,
+      active: scopedRentals.filter((r) => Number(r.status) === RENTAL_STATUS.ACTIVE).length,
+      returned: scopedRentals.filter(
+        (r) => Number(r.status) === RENTAL_STATUS.RETURNED || Number(r.status) === RENTAL_STATUS.COMPLETED
+      ).length,
+      cancelled: scopedRentals.filter((r) => Number(r.status) === RENTAL_STATUS.CANCELLED).length,
+    };
+  }, [scopedRentals]);
+
   // Filtered list for the interactive visual card picker
   const filteredRentals = useMemo(() => {
-    return availableRentals.filter((r) => {
+    return scopedRentals.filter((r) => {
       if (statusFilter === 'ALL') return true;
+      if (statusFilter === 'PENDING') return Number(r.status) === RENTAL_STATUS.PENDING;
       if (statusFilter === 'ACTIVE') return Number(r.status) === RENTAL_STATUS.ACTIVE;
       if (statusFilter === 'RETURNED')
         return (
@@ -365,7 +389,7 @@ export default function ClaimsPage() {
       if (statusFilter === 'CANCELLED') return Number(r.status) === RENTAL_STATUS.CANCELLED;
       return true;
     });
-  }, [availableRentals, statusFilter]);
+  }, [scopedRentals, statusFilter]);
 
   // Check if input looks like an address/hash
   const isAddressOrHash =
@@ -440,7 +464,11 @@ export default function ClaimsPage() {
                 {language === 'th' ? 'เลือกสัญญาเช่าที่ต้องการตรวจสอบ' : t('claims.queryCardTitle')}
               </h5>
               <span className="badge bg-light text-primary border small">
-                {language === 'th'
+                {viewScope === 'MY_RENTALS'
+                  ? language === 'th'
+                    ? `สัญญาของคุณ ${account ? myRentals.length : 0} รายการ`
+                    : `Your Rentals: ${account ? myRentals.length : 0}`
+                  : language === 'th'
                   ? `พบทั้งหมด ${availableRentals.length} สัญญา`
                   : `${availableRentals.length} Agreements`}
               </span>
@@ -451,6 +479,70 @@ export default function ClaimsPage() {
                 ? 'เลือกสัญญาเช่าจากเมนูดรอปดาวน์ หรือคลิกเลือกการ์ดสัญญาด้านล่าง เพื่อดึงข้อมูลสดจาก Smart Contract บน Sepolia'
                 : t('claims.queryCardDesc')}
             </p>
+
+            {/* View Scope Tabs: Only My Rentals (Default) vs All System Contracts */}
+            <div className="mb-3">
+              <div className="btn-group btn-group-sm w-100 p-1 bg-light rounded-3 border" role="group">
+                <button
+                  type="button"
+                  onClick={() => setViewScope('MY_RENTALS')}
+                  className={`btn py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 ${
+                    viewScope === 'MY_RENTALS'
+                      ? 'btn-primary shadow-sm text-white'
+                      : 'btn-light text-secondary'
+                  }`}
+                >
+                  <i className="bi bi-person-check-fill"></i>
+                  <span>{language === 'th' ? 'สัญญาของคุณเท่านั้น' : 'My Rentals Only'}</span>
+                  <span
+                    className={`badge ms-1 ${
+                      viewScope === 'MY_RENTALS' ? 'bg-white text-primary' : 'bg-secondary text-white'
+                    }`}
+                  >
+                    {account ? myRentals.length : 0}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewScope('ALL_SYSTEM')}
+                  className={`btn py-1.5 fw-semibold d-flex align-items-center justify-content-center gap-1.5 ${
+                    viewScope === 'ALL_SYSTEM'
+                      ? 'btn-primary shadow-sm text-white'
+                      : 'btn-light text-secondary'
+                  }`}
+                >
+                  <i className="bi bi-globe2"></i>
+                  <span>{language === 'th' ? 'สัญญาทั้งหมดบนระบบ' : 'All System Agreements'}</span>
+                  <span
+                    className={`badge ms-1 ${
+                      viewScope === 'ALL_SYSTEM' ? 'bg-white text-primary' : 'bg-secondary text-white'
+                    }`}
+                  >
+                    {availableRentals.length}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* If My Rentals selected but Wallet not connected */}
+            {viewScope === 'MY_RENTALS' && !account && (
+              <div className="alert alert-warning py-2 px-3 small rounded-3 mb-3 d-flex align-items-center justify-content-between">
+                <div>
+                  <i className="bi bi-wallet2 me-1.5"></i>
+                  {language === 'th'
+                    ? 'กรุณาเชื่อมต่อกระเป๋าเพื่อดูสัญญาเช่าของคุณ'
+                    : 'Connect your wallet to inspect your agreements'}
+                </div>
+                <button
+                  type="button"
+                  onClick={connect}
+                  className="btn btn-warning btn-xs fw-bold px-2.5 py-1 rounded"
+                >
+                  {t('nav.connectWallet')}
+                </button>
+              </div>
+            )}
 
             {/* 1. Interactive Dropdown Selector */}
             <div className="mb-4">
@@ -477,16 +569,21 @@ export default function ClaimsPage() {
                     : '-- Select a rental agreement to inspect --'}
                 </option>
 
-                {/* Group 1: My Rentals */}
-                {myRentals.length > 0 && (
-                  <optgroup
-                    label={
-                      language === 'th'
-                        ? `⭐ สัญญาของคุณ (${myRentals.length} รายการ)`
-                        : `⭐ Your Rentals (${myRentals.length})`
-                    }
-                  >
-                    {myRentals.map((r) => {
+                {viewScope === 'MY_RENTALS' ? (
+                  !account ? (
+                    <option value="" disabled>
+                      {language === 'th'
+                        ? 'กรุณาเชื่อมต่อกระเป๋าเพื่อดูสัญญาเช่าของคุณ'
+                        : 'Please connect wallet to view your rentals'}
+                    </option>
+                  ) : myRentals.length === 0 ? (
+                    <option value="" disabled>
+                      {language === 'th'
+                        ? 'ไม่พบสัญญาเช่าของคุณในกระเป๋านี้'
+                        : 'No rentals found for this connected account'}
+                    </option>
+                  ) : (
+                    myRentals.map((r) => {
                       const item = itemMap[r.itemId];
                       const name = item ? item.name : `Item #${r.itemId}`;
                       const statusTxt = getStatusLabel(r.status);
@@ -495,29 +592,53 @@ export default function ClaimsPage() {
                           #{r.rentalId} - {name} [{statusTxt}] | มัดจำ: {r.depositEth} ETH
                         </option>
                       );
-                    })}
-                  </optgroup>
-                )}
+                    })
+                  )
+                ) : (
+                  <>
+                    {/* Group 1: My Rentals */}
+                    {myRentals.length > 0 && (
+                      <optgroup
+                        label={
+                          language === 'th'
+                            ? `⭐ สัญญาของคุณ (${myRentals.length} รายการ)`
+                            : `⭐ Your Rentals (${myRentals.length})`
+                        }
+                      >
+                        {myRentals.map((r) => {
+                          const item = itemMap[r.itemId];
+                          const name = item ? item.name : `Item #${r.itemId}`;
+                          const statusTxt = getStatusLabel(r.status);
+                          return (
+                            <option key={`my-${r.rentalId}`} value={r.rentalId}>
+                              #{r.rentalId} - {name} [{statusTxt}] | มัดจำ: {r.depositEth} ETH
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    )}
 
-                {/* Group 2: All Other System Contracts */}
-                <optgroup
-                  label={
-                    language === 'th'
-                      ? `📋 สัญญาเช่าทั้งหมดบนระบบ (${otherRentals.length} รายการ)`
-                      : `📋 All System Agreements (${otherRentals.length})`
-                  }
-                >
-                  {otherRentals.map((r) => {
-                    const item = itemMap[r.itemId];
-                    const name = item ? item.name : `Item #${r.itemId}`;
-                    const statusTxt = getStatusLabel(r.status);
-                    return (
-                      <option key={`all-${r.rentalId}`} value={r.rentalId}>
-                        #{r.rentalId} - {name} [{statusTxt}] | มัดจำ: {r.depositEth} ETH
-                      </option>
-                    );
-                  })}
-                </optgroup>
+                    {/* Group 2: All Other System Contracts */}
+                    <optgroup
+                      label={
+                        language === 'th'
+                          ? `📋 สัญญาเช่าทั้งหมดบนระบบ (${otherRentals.length} รายการ)`
+                          : `📋 All System Agreements (${otherRentals.length})`
+                      }
+                    >
+                      {otherRentals.map((r) => {
+                        const item = itemMap[r.itemId];
+                        const name = item ? item.name : `Item #${r.itemId}`;
+                        const statusTxt = getStatusLabel(r.status);
+                        return (
+                          <option key={`all-${r.rentalId}`} value={r.rentalId}>
+                            #{r.rentalId} - {name} [{statusTxt}] | มัดจำ: {r.depositEth} ETH
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  </>
+                )}
               </select>
             </div>
 
@@ -527,12 +648,14 @@ export default function ClaimsPage() {
                 <label className="form-label small fw-bold text-secondary mb-0">
                   <i className="bi bi-grid text-primary me-1"></i>
                   {language === 'th'
-                    ? '2. หรือคลิกเลือกจากการ์ดสัญญา (Quick Card Picker):'
+                    ? viewScope === 'MY_RENTALS'
+                      ? '2. เลือกจากสัญญาของคุณ (Quick Card Picker):'
+                      : '2. หรือคลิกเลือกจากการ์ดสัญญา (Quick Card Picker):'
                     : '2. Or Click to Inspect Agreement:'}
                 </label>
 
                 {/* Status Filter Buttons */}
-                <div className="btn-group btn-group-sm" role="group">
+                <div className="btn-group btn-group-sm flex-wrap" role="group">
                   <button
                     type="button"
                     onClick={() => setStatusFilter('ALL')}
@@ -540,34 +663,43 @@ export default function ClaimsPage() {
                       statusFilter === 'ALL' ? 'btn-primary' : 'btn-outline-secondary'
                     }`}
                   >
-                    {language === 'th' ? 'ทั้งหมด' : 'All'} ({availableRentals.length})
+                    {language === 'th' ? 'ทั้งหมด' : 'All'} ({statusCounts.all})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStatusFilter('PENDING')}
+                    className={`btn btn-xs ${
+                      statusFilter === 'PENDING' ? 'btn-warning text-dark fw-bold' : 'btn-outline-secondary'
+                    }`}
+                  >
+                    {language === 'th' ? 'รออนุมัติ' : 'Pending'} ({statusCounts.pending})
                   </button>
                   <button
                     type="button"
                     onClick={() => setStatusFilter('ACTIVE')}
                     className={`btn btn-xs ${
-                      statusFilter === 'ACTIVE' ? 'btn-primary' : 'btn-outline-secondary'
+                      statusFilter === 'ACTIVE' ? 'btn-success text-white' : 'btn-outline-secondary'
                     }`}
                   >
-                    {language === 'th' ? 'กำลังเช่า' : 'Active'}
+                    {language === 'th' ? 'กำลังเช่า' : 'Active'} ({statusCounts.active})
                   </button>
                   <button
                     type="button"
                     onClick={() => setStatusFilter('RETURNED')}
                     className={`btn btn-xs ${
-                      statusFilter === 'RETURNED' ? 'btn-primary' : 'btn-outline-secondary'
+                      statusFilter === 'RETURNED' ? 'btn-secondary text-white' : 'btn-outline-secondary'
                     }`}
                   >
-                    {language === 'th' ? 'คืนแล้ว' : 'Returned'}
+                    {language === 'th' ? 'คืนแล้ว' : 'Returned'} ({statusCounts.returned})
                   </button>
                   <button
                     type="button"
                     onClick={() => setStatusFilter('CANCELLED')}
                     className={`btn btn-xs ${
-                      statusFilter === 'CANCELLED' ? 'btn-primary' : 'btn-outline-secondary'
+                      statusFilter === 'CANCELLED' ? 'btn-danger text-white' : 'btn-outline-secondary'
                     }`}
                   >
-                    {language === 'th' ? 'ยกเลิก' : 'Cancelled'}
+                    {language === 'th' ? 'ยกเลิก' : 'Cancelled'} ({statusCounts.cancelled})
                   </button>
                 </div>
               </div>
@@ -577,11 +709,30 @@ export default function ClaimsPage() {
                 className="d-flex flex-wrap gap-2 p-2 rounded bg-light border"
                 style={{ maxHeight: '180px', overflowY: 'auto' }}
               >
-                {filteredRentals.length === 0 ? (
+                {viewScope === 'MY_RENTALS' && !account ? (
                   <div className="w-100 text-center py-3 text-muted small">
+                    <i className="bi bi-wallet2 d-block mb-1 text-secondary"></i>
                     {language === 'th'
-                      ? 'ไม่มีสัญญาเช่าในหมวดหมู่นี้'
-                      : 'No agreements matching this filter'}
+                      ? 'เชื่อมต่อกระเป๋าเพื่อดูสัญญาเช่าของคุณ'
+                      : 'Connect wallet to view your rentals'}
+                  </div>
+                ) : filteredRentals.length === 0 ? (
+                  <div className="w-100 text-center py-3 text-muted small">
+                    {viewScope === 'MY_RENTALS' && myRentals.length === 0 ? (
+                      <>
+                        <i className="bi bi-inbox fs-5 d-block mb-1 text-secondary opacity-50"></i>
+                        <span className="d-block mb-1">
+                          {language === 'th'
+                            ? 'ไม่พบประวัติการเช่าของคุณในกระเป๋านี้'
+                            : 'No rentals found for this wallet'}
+                        </span>
+                        <Link href="/rentals" className="btn btn-outline-primary btn-xs rounded-pill px-2.5">
+                          {language === 'th' ? 'ไปหน้าเช่าสินค้า' : 'Browse Items'}
+                        </Link>
+                      </>
+                    ) : (
+                      language === 'th' ? 'ไม่มีสัญญาเช่าในหมวดหมู่นี้' : 'No agreements matching this filter'
+                    )}
                   </div>
                 ) : (
                   filteredRentals.map((r) => {
@@ -589,10 +740,11 @@ export default function ClaimsPage() {
                     const item = itemMap[r.itemId];
                     const itemName = item ? item.name : `Item #${r.itemId}`;
 
-                    let badgeColor = 'bg-secondary';
-                    if (Number(r.status) === RENTAL_STATUS.ACTIVE) badgeColor = 'bg-success';
-                    if (Number(r.status) === RENTAL_STATUS.RETURNED) badgeColor = 'bg-secondary';
-                    if (Number(r.status) === RENTAL_STATUS.CANCELLED) badgeColor = 'bg-danger';
+                    let badgeColor = 'bg-secondary text-white';
+                    if (Number(r.status) === RENTAL_STATUS.PENDING) badgeColor = 'bg-warning text-dark';
+                    if (Number(r.status) === RENTAL_STATUS.ACTIVE) badgeColor = 'bg-success text-white';
+                    if (Number(r.status) === RENTAL_STATUS.RETURNED) badgeColor = 'bg-secondary text-white';
+                    if (Number(r.status) === RENTAL_STATUS.CANCELLED) badgeColor = 'bg-danger text-white';
 
                     return (
                       <button
@@ -606,7 +758,7 @@ export default function ClaimsPage() {
                         }`}
                         style={{ borderRadius: '8px' }}
                       >
-                        <span className={`badge ${badgeColor} text-white`}>#{r.rentalId}</span>
+                        <span className={`badge ${badgeColor}`}>#{r.rentalId}</span>
                         <span
                           className="small fw-semibold text-truncate"
                           style={{ maxWidth: '140px' }}
@@ -885,6 +1037,20 @@ export default function ClaimsPage() {
                           : `Deposit of ${inspectedRental.depositEth} ETH refunded to renter.`}
                       </span>
                     </div>
+                  ) : inspectedRental.status === RENTAL_STATUS.PENDING ? (
+                    <div className="d-flex flex-column gap-1">
+                      <span className="badge bg-warning text-dark align-self-start">
+                        <i className="bi bi-clock-history me-1"></i>
+                        {language === 'th'
+                          ? 'เงินพักในระบบ Escrow ปลอดภัย (รอเจ้าของอนุมัติ)'
+                          : 'Funds Safely Held in Escrow (Awaiting Owner Approval)'}
+                      </span>
+                      <span className="small text-muted">
+                        {language === 'th'
+                          ? `ยอดเงิน ${inspectedRental.totalPaidEth} ETH (มัดจำ ${inspectedRental.depositEth} ETH) ถูกพักไว้ในระบบอย่างปลอดภัย`
+                          : `Total funds of ${inspectedRental.totalPaidEth} ETH held securely in escrow.`}
+                      </span>
+                    </div>
                   ) : (
                     <span className="badge bg-secondary">
                       {language === 'th' ? 'สิ้นสุดสัญญาแล้ว' : 'Terminated'}
@@ -1013,6 +1179,31 @@ export default function ClaimsPage() {
                       >
                         <i className="bi bi-box-seam"></i>
                         {language === 'th' ? '📦 ดูรายการที่กำลังเช่าทั้งหมด (My Rentals)' : 'View All Active Rentals'}
+                      </Link>
+                    </div>
+                  ) : inspectedRental.status === RENTAL_STATUS.PENDING ? (
+                    <div className="d-flex flex-column gap-2">
+                      <div className="alert alert-warning py-2.5 px-3 small mb-0 d-flex align-items-center gap-2">
+                        <i className="bi bi-clock-history fs-5 text-warning"></i>
+                        <div>
+                          <strong className="d-block text-dark">
+                            {language === 'th'
+                              ? 'รอเจ้าของทรัพย์สินอนุมัติคำขอเช่า'
+                              : 'Waiting for Asset Owner Approval'}
+                          </strong>
+                          <span className="text-secondary">
+                            {language === 'th'
+                              ? 'เมื่อเจ้าของกดอนุมัติ ระบบจะเริ่มนับเวลาสัญญาถอยหลังทันที และสามารถต่ออายุหรือส่งคืนได้'
+                              : 'Once approved by owner, countdown will begin and lease actions will be enabled.'}
+                          </span>
+                        </div>
+                      </div>
+                      <Link
+                        href="/my-rentals"
+                        className="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-1.5"
+                      >
+                        <i className="bi bi-wallet2"></i>
+                        {language === 'th' ? 'ไปที่หน้า "การเช่าของฉัน" (My Rentals)' : 'Go to My Rentals'}
                       </Link>
                     </div>
                   ) : (

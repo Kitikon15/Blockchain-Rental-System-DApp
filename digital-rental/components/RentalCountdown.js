@@ -50,6 +50,16 @@ export default function RentalCountdown({
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
+  // Pending Owner Approval status
+  if (status === RENTAL_STATUS.PENDING) {
+    return (
+      <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1">
+        <i className="bi bi-clock-history"></i>
+        <span>{language === 'th' ? 'รอเจ้าของอนุมัติการเช่า (เวลานับเมื่ออนุมัติ)' : 'Pending Approval (Timer starts upon approval)'}</span>
+      </span>
+    );
+  }
+
   // Returned status
   if (status === RENTAL_STATUS.RETURNED || status === RENTAL_STATUS.COMPLETED) {
     return (
@@ -60,12 +70,22 @@ export default function RentalCountdown({
     );
   }
 
+  // Cancellation Requested status
+  if (status === RENTAL_STATUS.CANCEL_REQUESTED) {
+    return (
+      <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1">
+        <i className="bi bi-hourglass-split"></i>
+        <span>{language === 'th' ? 'รอเจ้าของอนุมัติยกเลิก & คืนเงิน' : 'Waiting Approval & Refund'}</span>
+      </span>
+    );
+  }
+
   // Cancelled status
   if (status === RENTAL_STATUS.CANCELLED) {
     return (
-      <span className="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1">
+      <span className="badge bg-secondary-subtle text-secondary border border-secondary-subtle d-inline-flex align-items-center gap-1">
         <i className="bi bi-x-circle"></i>
-        <span>{language === 'th' ? 'ยกเลิกแล้ว (คืนมัดจำแล้ว)' : 'Cancelled (Refunded)'}</span>
+        <span>{language === 'th' ? 'ยกเลิกแล้ว (คืนเงินเรียบร้อย)' : 'Cancelled & Refunded'}</span>
       </span>
     );
   }

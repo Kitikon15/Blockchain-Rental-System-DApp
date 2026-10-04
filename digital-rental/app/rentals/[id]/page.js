@@ -11,6 +11,7 @@ import {
   updateItemAvailabilityOnChain,
   returnItemOnChain,
   cancelRentalOnChain,
+  requestRentalCancellationOnChain,
   isContractConfigured,
   parseContractError,
 } from '../../../lib/contract';
@@ -52,11 +53,16 @@ export default function ItemDetailsPage() {
   const contractConfigured = isContractConfigured();
   const explorerBase = process.env.NEXT_PUBLIC_EXPLORER_URL || DEFAULT_EXPLORER_URL;
 
-  // Live action state (Return or Cancel)
+  // Live action state (Return or Cancel Request)
   const [actionTxState, setActionTxState] = useState(null);
   const [actionTxHash, setActionTxHash] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+
+  // Cancellation request modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelModalRentalId, setCancelModalRentalId] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const loadItemDetails = useCallback(async () => {
     if (!contractConfigured || !itemId) {
@@ -99,10 +105,10 @@ export default function ItemDetailsPage() {
   const isOwner =
     account && item?.owner && account.toLowerCase() === item.owner.toLowerCase();
 
-  // Check if current user is active renter of this item
+  // Check if current user is active renter of this item (including waiting for cancellation approval)
   const activeRentalForUser = itemRentals.find(
     (r) =>
-      r.status === RENTAL_STATUS.ACTIVE &&
+      (r.status === RENTAL_STATUS.ACTIVE || r.status === RENTAL_STATUS.CANCEL_REQUESTED) &&
       r.renter &&
       account &&
       r.renter.toLowerCase() === account.toLowerCase()
@@ -147,17 +153,25 @@ export default function ItemDetailsPage() {
     }
   };
 
-  const handleCancelAction = async (rentalId) => {
+  const openCancelModal = (rentalId) => {
+    setCancelModalRentalId(rentalId);
+    setCancelReason('');
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancelRequest = async () => {
+    if (!cancelModalRentalId) return;
     setIsProcessingAction(true);
     setActionTxState('waiting_approval');
     setActionError(null);
     try {
-      const { hash } = await cancelRentalOnChain(rentalId);
+      const { hash } = await requestRentalCancellationOnChain(cancelModalRentalId, cancelReason);
       setActionTxHash(hash);
       setActionTxState('confirmed');
+      setShowCancelModal(false);
       await loadItemDetails();
     } catch (err) {
-      console.error('Cancel rental error:', err);
+      console.error('Cancel rental request error:', err);
       setActionError(parseContractError(err));
       setActionTxState('failed');
     } finally {
@@ -211,7 +225,102 @@ export default function ItemDetailsPage() {
           </div>
         </div>
       ) : (
-        <div className="row g-4">
+        <>
+          {/* Active Rental Status & Info Banner if current user is renting this item */}
+          {activeRentalForUser && (
+            <div
+              className={`card border-0 mb-4 shadow-sm overflow-hidden ${
+                activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED
+                  ? 'bg-warning-subtle border-start border-4 border-warning'
+                  : 'bg-primary-subtle border-start border-4 border-primary'
+              }`}
+            >
+              <div className="card-body p-4">
+                <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                  <div>
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <span
+                        className={`badge ${
+                          activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED
+                            ? 'bg-warning text-dark'
+                            : 'bg-primary'
+                        } fw-bold px-2.5 py-1.5`}
+                      >
+                        <i
+                          className={`bi ${
+                            activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED
+                              ? 'bi-hourglass-split'
+                              : 'bi-patch-check-fill'
+                          } me-1`}
+                        ></i>
+                        {activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED
+                          ? (language === 'th' ? 'สถานะ: ส่งคำขอยกเลิกแล้ว (รอเจ้าของอนุมัติ)' : 'Status: Cancellation Requested')
+                          : (language === 'th' ? 'สถานะ: คุณกำลังเช่าอุปกรณ์ชิ้นนี้อยู่' : 'Status: You Are Currently Renting This')}
+                      </span>
+                      <span className="badge bg-white text-secondary border font-monospace">
+                        Rental #{activeRentalForUser.rentalId}
+                      </span>
+                    </div>
+                    <h5 className="fw-bold mb-1 text-dark">
+                      {language === 'th'
+                        ? `ข้อมูลการเช่าของคุณ: ${item.name}`
+                        : `Your Active Rental Information: ${item.name}`}
+                    </h5>
+                    <div className="small text-secondary mt-1 d-flex flex-wrap gap-3">
+                      <span>
+                        <i className="bi bi-calendar3 me-1 text-primary"></i>
+                        {language === 'th' ? 'เริ่มต้นเช่า:' : 'Start:'} <strong>{formatDateTime(activeRentalForUser.startTime, language)}</strong>
+                      </span>
+                      <span>
+                        <i className="bi bi-calendar-check me-1 text-danger"></i>
+                        {language === 'th' ? 'กำหนดส่งคืน:' : 'Due Date:'} <strong>{formatDateTime(activeRentalForUser.endTime, language)}</strong>
+                      </span>
+                      <span>
+                        <i className="bi bi-cash-stack me-1 text-success"></i>
+                        {language === 'th' ? 'ยอดเงินที่ชำระแล้ว:' : 'Total Paid:'} <strong>{activeRentalForUser.totalPaidEth} ETH</strong>
+                      </span>
+                    </div>
+
+                    {activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED ? (
+                      <div className="alert alert-warning py-2 px-3 small mt-3 mb-0 border-warning">
+                        <i className="bi bi-info-circle-fill me-1"></i>
+                        {language === 'th'
+                          ? 'คุณได้ส่งคำขอยกเลิกการเช่าแล้ว กรุณารอเจ้าของทรัพย์สินกดอนุมัติการยกเลิกและโอนยอดค่าเช่า/มัดจำคืนเข้าวอลเล็ตของคุณ'
+                          : 'You have submitted a cancellation request. Please wait for the owner to approve and refund your ETH back to your wallet.'}
+                      </div>
+                    ) : (
+                      <div className="text-muted small mt-2">
+                        <i className="bi bi-shield-check text-success me-1"></i>
+                        {language === 'th'
+                          ? 'สัญญาเช่ามีผลบน Smart Contract เรียบร้อย ระบบจะแจ้งเตือนอัตโนมัติก่อนหมดเวลาเช่า'
+                          : 'Rental contract is active on the Smart Contract. The system will alert you before the rental period expires.'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="d-flex flex-column align-items-md-end gap-2 text-md-end">
+                    <span className="small text-muted fw-semibold d-block">
+                      {language === 'th' ? 'เวลานับถอยหลัง Real-time:' : 'Live Rental Countdown:'}
+                    </span>
+                    <RentalCountdown
+                      endTime={activeRentalForUser.endTime}
+                      startTime={activeRentalForUser.startTime}
+                      status={activeRentalForUser.status}
+                    />
+                    <Link
+                      href="/my-rentals"
+                      className="btn btn-outline-dark btn-sm rounded-pill mt-2"
+                    >
+                      <i className="bi bi-collection-play me-1"></i>
+                      {language === 'th' ? 'ไปยังศูนย์ข้อมูลการเช่าของฉัน' : 'View My Rentals Hub'}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="row g-4">
           {/* Left Column: Item Specifications */}
           <div className="col-lg-8">
             <div className="card shadow-sm border bg-white mb-4">
@@ -415,16 +524,23 @@ export default function ItemDetailsPage() {
                                         {language === 'th' ? 'ส่งคืน' : 'Return'}
                                       </button>
                                     )}
-                                    <button
-                                      onClick={() => handleCancelAction(r.rentalId)}
-                                      disabled={isProcessingAction}
-                                      className="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill"
-                                      title={language === 'th' ? 'ยกเลิกการเช่า & คืนเงินมัดจำทันที' : 'Cancel rental & refund deposit'}
-                                    >
-                                      <i className="bi bi-x-circle me-1"></i>
-                                      {language === 'th' ? 'ยกเลิกมัดจำ' : 'Cancel'}
-                                    </button>
+                                    {isRenter && (
+                                      <button
+                                        onClick={() => openCancelModal(r.rentalId)}
+                                        disabled={isProcessingAction}
+                                        className="btn btn-xs btn-outline-danger py-0 px-2 rounded-pill"
+                                        title={language === 'th' ? 'ส่งคำขอยกเลิกการเช่าไปยังเจ้าของ' : 'Request cancellation from owner'}
+                                      >
+                                        <i className="bi bi-x-circle me-1"></i>
+                                        {language === 'th' ? 'ขอยกเลิก' : 'Cancel'}
+                                      </button>
+                                    )}
                                   </div>
+                                ) : r.status === RENTAL_STATUS.CANCEL_REQUESTED ? (
+                                  <span className="badge bg-warning-subtle text-warning border border-warning small">
+                                    <i className="bi bi-hourglass-split me-1"></i>
+                                    {language === 'th' ? 'รออนุมัติยกเลิก' : 'Cancel Pending'}
+                                  </span>
                                 ) : (
                                   <Link
                                     href={`/claims?id=${r.rentalId}`}
@@ -514,39 +630,63 @@ export default function ItemDetailsPage() {
                     </button>
                   ) : activeRentalForUser ? (
                     <div className="d-flex flex-column gap-2">
-                      <div className="alert alert-success py-2 px-3 small mb-1 border-success-subtle">
-                        <div className="fw-bold mb-1">
-                          <i className="bi bi-check-circle-fill text-success me-1"></i>
-                          {language === 'th' ? 'คุณกำลังเช่าทรัพย์สินนี้อยู่' : 'You are currently renting this item'}
+                      {activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED ? (
+                        <div className="alert alert-warning py-2 px-3 small mb-1 border-warning">
+                          <div className="fw-bold mb-1">
+                            <i className="bi bi-hourglass-split me-1"></i>
+                            {language === 'th' ? 'ส่งคำขอยกเลิกแล้ว' : 'Cancellation Requested'}
+                          </div>
+                          <p className="mb-0 text-muted small">
+                            {language === 'th'
+                              ? 'รอเจ้าของทรัพย์สินกดอนุมัติการยกเลิกและโอนยอดค่าเช่าคืนเข้าวอลเล็ต'
+                              : 'Waiting for asset owner to approve cancellation and refund rental fees.'}
+                          </p>
                         </div>
-                        <div className="d-flex align-items-center justify-content-between mt-1">
-                          <span className="text-muted small">{language === 'th' ? 'เวลานับถอยหลัง:' : 'Countdown:'}</span>
-                          <RentalCountdown
-                            endTime={activeRentalForUser.endTime}
-                            startTime={activeRentalForUser.startTime}
-                            status={activeRentalForUser.status}
-                            compact={true}
-                          />
+                      ) : (
+                        <div className="alert alert-success py-2 px-3 small mb-1 border-success-subtle">
+                          <div className="fw-bold mb-1">
+                            <i className="bi bi-check-circle-fill text-success me-1"></i>
+                            {language === 'th' ? 'คุณกำลังเช่าทรัพย์สินนี้อยู่' : 'You are currently renting this item'}
+                          </div>
+                          <div className="d-flex align-items-center justify-content-between mt-1">
+                            <span className="text-muted small">{language === 'th' ? 'เวลานับถอยหลัง:' : 'Countdown:'}</span>
+                            <RentalCountdown
+                              endTime={activeRentalForUser.endTime}
+                              startTime={activeRentalForUser.startTime}
+                              status={activeRentalForUser.status}
+                              compact={true}
+                            />
+                          </div>
                         </div>
-                      </div>
-                      <button
-                        onClick={() => handleReturnAction(activeRentalForUser.rentalId)}
-                        disabled={isProcessingAction}
-                        className="btn btn-success fw-bold py-2 shadow-sm"
-                        title={language === 'th' ? 'ส่งคืนทรัพย์สินและรับเงินมัดจำคืน' : 'Return item and receive deposit refund'}
-                      >
-                        <i className="bi bi-arrow-return-left me-1"></i>
-                        {language === 'th' ? 'ส่งคืนทรัพย์สิน (รับมัดจำคืน)' : 'Return Item & Refund Deposit'}
-                      </button>
-                      <button
-                        onClick={() => handleCancelAction(activeRentalForUser.rentalId)}
-                        disabled={isProcessingAction}
-                        className="btn btn-outline-danger fw-bold py-2"
-                        title={language === 'th' ? 'ยกเลิกการเช่าและรับเงินมัดจำคืนทันที' : 'Cancel rental and refund deposit'}
-                      >
-                        <i className="bi bi-x-circle me-1"></i>
-                        {language === 'th' ? 'ยกเลิกการเช่า (คืนมัดจำทันที)' : 'Cancel Rental & Refund Deposit'}
-                      </button>
+                      )}
+
+                      {activeRentalForUser.status === RENTAL_STATUS.CANCEL_REQUESTED ? (
+                        <button className="btn btn-warning fw-bold py-2" disabled>
+                          <span className="spinner-border spinner-border-sm me-2"></span>
+                          {language === 'th' ? 'รอเจ้าของอนุมัติ & คืนเงิน' : 'Waiting Owner Approval & Refund'}
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleReturnAction(activeRentalForUser.rentalId)}
+                            disabled={isProcessingAction}
+                            className="btn btn-success fw-bold py-2 shadow-sm"
+                            title={language === 'th' ? 'ส่งคืนทรัพย์สินและรับเงินมัดจำคืน' : 'Return item and receive deposit refund'}
+                          >
+                            <i className="bi bi-arrow-return-left me-1"></i>
+                            {language === 'th' ? 'ส่งคืนทรัพย์สิน (รับมัดจำคืน)' : 'Return Item & Refund Deposit'}
+                          </button>
+                          <button
+                            onClick={() => openCancelModal(activeRentalForUser.rentalId)}
+                            disabled={isProcessingAction}
+                            className="btn btn-outline-danger fw-bold py-2"
+                            title={language === 'th' ? 'ส่งคำขอยกเลิกการเช่าไปยังเจ้าของเพื่อรออนุมัติและคืนเงิน' : 'Request cancellation and await owner approval & refund'}
+                          >
+                            <i className="bi bi-x-circle me-1"></i>
+                            {language === 'th' ? 'ขอยกเลิก (รอเจ้าของคืนเงิน)' : 'Request Cancel (Wait Owner Refund)'}
+                          </button>
+                        </>
+                      )}
                     </div>
                   ) : !item.available ? (
                     <button className="btn btn-danger py-2.5" disabled>
@@ -565,6 +705,7 @@ export default function ItemDetailsPage() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* Checkout Modal */}
@@ -575,6 +716,103 @@ export default function ItemDetailsPage() {
           onClose={() => setIsModalOpen(false)}
           onRentalSuccess={loadItemDetails}
         />
+      )}
+
+      {/* Cancellation Request Modal */}
+      {showCancelModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)' }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content shadow border-0">
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title fw-bold">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  {language === 'th' ? 'ขอยกเลิกการเช่า' : 'Request Rental Cancellation'}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={isProcessingAction}
+                ></button>
+              </div>
+
+              <div className="modal-body p-4">
+                <div className="alert alert-warning border-warning small mb-3">
+                  <div className="fw-bold mb-1">
+                    <i className="bi bi-shield-lock me-1"></i>
+                    {language === 'th' ? 'เงื่อนไขการยกเลิกตามระบบ:' : 'System Cancellation Policy:'}
+                  </div>
+                  {language === 'th'
+                    ? 'เมื่อกดยืนยันคำขอ สถานะจะเปลี่ยนเป็น "รอเจ้าของอนุมัติยกเลิก" และรอทางเจ้าของทรัพย์สินกดอนุมัติเพื่อโอนเงินค่าเช่าและเงินมัดจำคืนเข้าวอลเล็ตของคุณ'
+                    : 'Once submitted, the status changes to "Cancel Requested (Waiting Approval)". You must wait for the owner to approve and issue a full/partial refund back to your wallet.'}
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label small fw-bold text-secondary">
+                    {language === 'th' ? 'สัญญาเช่าหมายเลข' : 'Rental ID'}
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control form-control-sm font-monospace bg-light"
+                    value={`#${cancelModalRentalId}`}
+                    readOnly
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label className="form-label small fw-bold text-secondary">
+                    {language === 'th' ? 'เหตุผลในการขอยกเลิก (ระบุเพื่อแจ้งเจ้าของ):' : 'Reason for Cancellation (Optional):'}
+                  </label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    placeholder={
+                      language === 'th'
+                        ? 'เช่น เปลี่ยนแผนการใช้งาน, อุปกรณ์ไม่ตรงตามต้องการ, ต้องการขอคืนเงิน'
+                        : 'e.g., Change of plans, item not as expected, requesting fee refund'
+                    }
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    disabled={isProcessingAction}
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="modal-footer bg-light">
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={isProcessingAction}
+                >
+                  {language === 'th' ? 'ปิด / ยกเลิกคำขอ' : 'Close'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm fw-bold px-3"
+                  onClick={handleConfirmCancelRequest}
+                  disabled={isProcessingAction}
+                >
+                  {isProcessingAction ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-1"></span>
+                      {language === 'th' ? 'กำลังส่งคำขอ...' : 'Submitting...'}
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-send-check me-1"></i>
+                      {language === 'th' ? 'ยืนยันส่งคำขอยกเลิก' : 'Confirm Cancellation Request'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

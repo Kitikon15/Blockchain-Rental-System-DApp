@@ -17,14 +17,15 @@
 1. [ภาพรวมโครงการและปัญหาที่แก้ไข (Project Overview & Problem Statement)](#1-ภาพรวมโครงการและปัญหาที่แก้ไข-project-overview)
 2. [Tech Stack & Frameworks ทั้งหมดอย่างละเอียด (Technology Stack)](#2-tech-stack--frameworks-ทั้งหมดอย่างละเอียด-technology-stack)
 3. [สถาปัตยกรรมและองค์ประกอบของระบบ (System Architecture & Data Flow)](#3-สถาปัตยกรรมและองค์ประกอบของระบบ-system-architecture--data-flow)
-4. [โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory Structure)](#4-โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด-directory-structure)
-5. [สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)](#5-สถาปัตยกรรมและรายละเอียด-smart-contract-smart-contract-specifications)
-6. [ฟีเจอร์หลักและการทำงานแบบ Real-Time (Core Features & Real-Time Capabilities)](#6-ฟีเจอร์หลักและการทำงานแบบ-real-time-core-features)
-7. [แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ 21 รายการ (IT Asset Catalog)](#7-แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ-21-รายการ-it-asset-catalog)
-8. [ขั้นตอนการติดตั้งและเริ่มใช้งาน (Step-by-Step Installation & Setup Guide)](#8-ขั้นตอนการติดตั้งและเริ่มใช้งาน-setup-guide)
-9. [คู่มือการทดสอบการใช้งานทีละสเต็ป (Step-by-Step Testing & User Guide)](#9-คู่มือการทดสอบการใช้งานทีละสเต็ป-testing-guide)
-10. [ความปลอดภัยและการตรวจสอบสัญญา (Security, Best Practices & On-Chain Audit)](#10-ความปลอดภัยและการตรวจสอบสัญญา-security--best-practices)
-11. [ข้อมูลสัญญาและผู้พัฒนา (Contract Info & Developer Credits)](#11-ข้อมูลสัญญาและผู้พัฒนา-credits)
+4. [วงจรชีวิตของสัญญาเช่าและระบบ Escrow 2 ฝ่าย (Rental & Escrow Lifecycle)](#4-วงจรชีวิตของสัญญาเช่าและระบบ-escrow-2-ฝ่าย-rental--escrow-lifecycle)
+5. [โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory Structure)](#5-โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด-directory-structure)
+6. [สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)](#6-สถาปัตยกรรมและรายละเอียด-smart-contract-smart-contract-specifications)
+7. [ฟีเจอร์หลักและการทำงานแบบ Real-Time (Core Features & Real-Time Capabilities)](#7-ฟีเจอร์หลักและการทำงานแบบ-real-time-core-features)
+8. [แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ 21 รายการ (IT Asset Catalog)](#8-แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ-21-รายการ-it-asset-catalog)
+9. [ขั้นตอนการติดตั้งและเริ่มใช้งาน (Step-by-Step Installation & Setup Guide)](#9-ขั้นตอนการติดตั้งและเริ่มใช้งาน-setup-guide)
+10. [คู่มือการทดสอบการใช้งานทีละสเต็ป (Step-by-Step Testing & User Guide)](#10-คู่มือการทดสอบการใช้งานทีละสเต็ป-testing-guide)
+11. [ความปลอดภัยและการตรวจสอบสัญญา (Security, Best Practices & On-Chain Audit)](#11-ความปลอดภัยและการตรวจสอบสัญญา-security--best-practices)
+12. [ข้อมูลสัญญาและผู้พัฒนา (Contract Info & Developer Credits)](#12-ข้อมูลสัญญาและผู้พัฒนา-credits)
 
 ---
 
@@ -39,13 +40,16 @@
 * **ไม่มีระบบ Escrow ล็อกเงินที่โปร่งใส**: การโอนเงินตรงผ่านบัญชีธนาคารทำให้ผู้เช่าเสี่ยงไม่ได้รับของ หรือผู้ให้เช่าเสี่ยงไม่ได้รับเงิน
 
 ### 💡 ทางออกด้วยเทคโนโลยีบล็อกเชน (Blockchain Solutions)
-* **Smart Contract Escrow อัตโนมัติ**: เงินมัดจำประกันความเสียหาย (Security Deposit) จะถูกล็อกไว้ใน Bytecode ของสัญญาอัจฉริยะ และจะปลดล็อกโอนคืนให้ผู้เช่าทันทีเมื่อมีการกดยืนยันคืนของ (Return Item) หรือยกเลิกสัญญา (Cancel Rental)
+* **Smart Contract Escrow อัตโนมัติ**: เงินมัดจำประกันความเสียหาย (Security Deposit) และค่าเช่าจะถูกล็อกไว้ใน Bytecode ของสัญญาอัจฉริยะอย่างปลอดภัย
+* **ระบบการอนุมัติสัญญาเช่า 2 ฝ่าย (Two-Sided Agreement Flow)**: ผู้เช่าชำระเงินเข้า Escrow เพื่อขอเช่า (`PENDING`) และเจ้าของทรัพย์สินมีสิทธิ์กด **"อนุมัติให้เช่า"** เพื่อเริ่มสัญญาและเริ่มนับเวลาถอยหลัง หรือ **"ปฏิเสธ"** เพื่อคืนเงินให้ผู้เช่า
+* **ระบบขอยกเลิกและคืนเงินที่ได้รับการยินยอมร่วมกัน (Mutual Cancellation & Refund)**: ผู้เช่าสามารถกด **"ขอยกเลิกสัญญา"** ได้ตลอดเวลา และเจ้าของมีหน้าต่างตรวจสอบยอดเงินคืนพร้อมกด **"อนุมัติ & คืนเงิน"** โอนเงินกลับสู่กระเป๋าผู้เช่าทันที
 * **บันทึกถาวรแก้ไขไม่ได้ (Immutable Ledger)**: ทุกรายการเช่า รหัสทรัพย์สิน เวลาเริ่มต้น-สิ้นสุด และ Transaction Hash ถูกบันทึกถาวรบนบล็อกเชน
 * **การระบุตัวตนด้วย Web3 Wallet**: เข้าใช้งานผ่านกระเป๋าเงินดิจิทัล **MetaMask** โดยตรง ไม่ต้องใช้ Username/Password ไม่มีการเก็บข้อมูลส่วนบุคคลบนเซิร์ฟเวอร์
 * **หักเหรียญ ETH จริงบน Sepolia เริ่มต้น 0.05 ETH**: ทุกการทำธุรกรรมมีการตัดเหรียญ Sepolia ETH จริงเข้าสู่ระบบ
-* **ระบบนับถอยหลัง Real-Time Countdown**: แสดงเวลานับถอยหลังสัญญาเช่าแบบวินาทีสด และอัปเดตสถานะทันทีเมื่อหมดเวลา
+* **ระบบนับถอยหลัง Real-Time Countdown**: แสดงเวลานับถอยหลังสัญญาเช่าแบบวินาทีสด และอัปเดตสถานะทันทีเมื่อหมดเวลา พร้อมแจ้งเตือนเมื่อใกล้หมดอายุ
 * **การต่ออายุสัญญาเช่า (Extend Rental)**: ขยายระยะเวลาเช่าเป็น นาที / ชั่วโมง / วัน ได้ทุกเมื่อพร้อมคำนวณค่าธรรมเนียมส่วนเพิ่มอัตโนมัติ
 * **ตรวจสอบสัญญาและข้อพิพาทสด 100% (/claims)**: หน้า Audit ที่ให้เลือกดูสัญญาผ่าน Dropdown และ Quick Cards พร้อม Auto-Sync ดึงข้อมูลบล็อกเชนทุก 6 วินาที
+* **ระบบซิงก์สถานะ Real-Time ข้ามเบราว์เซอร์ (`/api/rentals`)**: ซิงก์สถานะสัญญา คำขอเช่า และคำขอยกเลิกระหว่างหลายบัญชี/หลายเบราว์เซอร์อัตโนมัติ
 * **รองรับ 2 ภาษาเต็มรูปแบบ (Bilingual TH / EN)**: มีระบบสลับภาษาไทยและอังกฤษ พร้อมระบบจดจำภาษาของผู้ใช้
 
 ---
@@ -60,9 +64,11 @@
 | **Web3 Wallet Interface** | [MetaMask](https://metamask.io/) (EIP-1193) | Standard | กระเป๋าเงิน Web3 ดิจิทัล (Injected Provider `window.ethereum`) ใช้ยืนยันตัวตน, จัดการ Key Pairs, สลับ Network อัตโนมัติ และ Sign ธุรกรรม |
 | **UI Framework** | [Bootstrap](https://getbootstrap.com/) | `^5.3.3` | CSS Framework จัดการ Responsive Grid System, Mobile Layout, Buttons, Modals, Cards, Badges และ Utilities |
 | **Icons Library** | [Bootstrap Icons](https://icons.getbootstrap.com/) | `^1.11.3` | ไอคอนเวกเตอร์ SVG สำหรับการแสดงผลหน้าเว็บ, เมนูนำทาง, หมวดหมู่ และสถานะธุรกรรม |
+| **Backend State Sync API** | Next.js Route Handlers (`/api/rentals`) | Next.js 14 | API สำหรับจัดเก็บและประสานสถานะสัญญาข้ามเครื่อง/ข้ามบัญชี (Authoritative State Synchronization) |
 | **Smart Contract** | [Solidity](https://soliditylang.org/) | `^0.8.20` | ภาษาสำหรับเขียนโปรแกรมสัญญาอัจฉริยะ คอมไพล์เป็น EVM Bytecode |
 | **Security Standards** | [OpenZeppelin Contracts](https://www.openzeppelin.com/contracts) | `^5.0.0` | ไลบรารีความปลอดภัยมาตรฐานระดับสากล: `Ownable` (จัดการสิทธิ์เจ้าของ) และ `ReentrancyGuard` (ป้องกันการโจมตี Reentrancy Attack) |
 | **Target Blockchain** | Ethereum Sepolia Testnet | Chain ID: `11155111` | บล็อกเชนทดสอบแบบ Proof-of-Stake ของ Ethereum สำหรับการทดสอบ Web3 DApp โดยใช้ Sepolia ETH ฟรี |
+| **Public RPC Provider** | Ethereum Sepolia PublicNode RPC | HTTPS | `https://ethereum-sepolia-rpc.publicnode.com` โหนด RPC ประสิทธิภาพสูงสำหรับการอ่านข้อมูล On-Chain |
 | **Development Tooling** | [Remix IDE](https://remix.ethereum.org/) | Web-based | เครื่องมือสำหรับเขียน ทดสอบ Unit Test, คอมไพล์ และ Deploy สัญญาอัจฉริยะขึ้น Sepolia |
 | **Runtime Environment** | [Node.js](https://nodejs.org/) & npm | Node v18+ / v20+ / v22+ | สภาพแวดล้อมรัน JavaScript ฝั่งเครื่องเซิร์ฟเวอร์และเครื่องนักพัฒนา |
 
@@ -91,26 +97,30 @@ flowchart TD
             P_Details["/rentals/[id] (Hardware Specs & Rent)"]
             P_MyRentals["/my-rentals (Active Rentals & Return)"]
             P_Register["/register (List New IT Asset)"]
-            P_Owner["/owner (Owner Inventory Management)"]
+            P_Owner["/owner (Owner Dashboard & Approvals)"]
             P_Claims["/claims (On-Chain Escrow Audit)"]
             P_Dash["/dashboard (System Overview & Metrics)"]
+            P_Api["/api/rentals (State Sync Handler)"]
         end
 
         subgraph Components ["Reusable Real-Time Components"]
             C_Countdown["RentalCountdown.js (Live Ticking)"]
             C_Card["RentalCard.js (Action Controls)"]
             C_Modal["RentalModal.js (Fee & Deposit Calc)"]
+            C_Alert["RentalExpiryAlert.js (Near-Expiry Alert)"]
+            C_Nav["Navbar.js (Live Badges & Switcher)"]
         end
 
-        subgraph Services ["Web3 Integration Layer"]
-            LibContract["lib/contract.js\n- ethers.js Contract Instance\n- Write & Read Functions\n- Hybrid On-Chain / Dynamic Storage"]
+        subgraph Services ["Web3 & State Integration Layer"]
+            LibContract["lib/contract.js\n- ethers.js Contract Instance\n- Two-Sided Rental Logic\n- Escrow Refund & Cancel"]
             LibWallet["lib/wallet.js\n- EIP-1193 Methods\n- Address Formatter"]
-            LibSeed["lib/seedData.js\n- 21 IT Hardware Assets\n- Dynamic LocalStorage State\n- Status & Time Overrides"]
+            LibSeed["lib/seedData.js\n- 21 IT Hardware Assets\n- Multi-Client Sync Engine\n- Authoritative Overrides"]
+            Storage["data/rentals-state.json\n- Cross-Browser Persistence"]
         end
     end
 
     subgraph BlockchainNetwork ["3. บล็อกเชน Ethereum Sepolia Testnet"]
-        SepoliaRPC["Ethereum Sepolia RPC Node\n(https://rpc.sepolia.org)"]
+        SepoliaRPC["PublicNode Sepolia RPC\n(https://ethereum-sepolia-rpc.publicnode.com)"]
         SmartContract["RentalSystem.sol Smart Contract\nAddress: 0xa0F7a17b...5861"]
         Etherscan["Sepolia Etherscan Block Explorer"]
     end
@@ -120,6 +130,8 @@ flowchart TD
     Routes --> Contexts
     Routes --> Components
     Routes --> Services
+    Services <--> P_Api
+    P_Api <--> Storage
     Contexts <--> MetaMask
     Services <--> MetaMask
     MetaMask <--> SepoliaRPC
@@ -130,30 +142,65 @@ flowchart TD
 
 ---
 
-### 🔄 วงจรชีวิตของสัญญาเช่าและเงินมัดจำ (Rental & Escrow Lifecycle)
+## 4. วงจรชีวิตของสัญญาเช่าและระบบ Escrow 2 ฝ่าย (Rental & Escrow Lifecycle)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Available: เจ้าของลงทะเบียนอุปกรณ์ไอที (registerItem)
-    Available --> Active: ผู้เช่าชำระค่าเช่า + มัดจำ (createRental, ขั้นต่ำ 0.05 ETH)
-    note right of Active
-        1. ค่าเช่าโอนให้เจ้าของทรัพย์สิน
-        2. เงินมัดจำล็อกไว้ใน Escrow
-        3. Real-time Countdown เริ่มนับถอยหลัง
+    [*] --> Available: เจ้าของลงทะเบียนอุปกรณ์ (registerItem)
+    
+    Available --> Pending: ผู้เช่าชำระค่าเช่า + มัดจำเข้า Escrow (createRental)
+    note right of Pending
+        สถานะ: 1 (PENDING)
+        - เงินมัดจำ + ค่าเช่าพักใน Escrow
+        - ยังไม่เริ่มนับเวลาสัญญา
+        - รอเจ้าของตรวจสอบและอนุมัติ
     end note
 
-    Active --> Active: ต่ออายุสัญญาเช่า (extendRental, เพิ่มเวลา & ชำระค่าเช่าเพิ่ม)
-    
+    Pending --> Cancelled: เจ้าของปฏิเสธคำขอ (rejectRentalRequest)
+    note right of Cancelled
+        สถานะ: 4 (CANCELLED)
+        - โอนคืนเงินมัดจำ + ค่าเช่าให้ผู้เช่า
+        - ทรัพย์สินกลับมาพร้อมให้เช่าใหม่
+    end note
+
+    Pending --> Active: เจ้าของกดอนุมัติให้เช่า (approveRentalRequest)
+    note right of Active
+        สถานะ: 2 (ACTIVE)
+        - โอนค่าเช่าให้เจ้าของ
+        - ล็อกเงินมัดจำไว้ใน Escrow
+        - Real-Time Countdown เริ่มนับถอยหลังทันที
+    end note
+
+    Active --> Active: ต่ออายุสัญญาเช่า (extendRental)
+    note right of Active
+        - ขยายเวลาเช่าเพิ่ม (นาที / ชม. / วัน)
+        - ชำระค่าธรรมเนียมส่วนเพิ่มเข้าสู่ระบบ
+    end note
+
+    Active --> CancelRequested: ผู้เช่ากดขอยกเลิกสัญญา (requestRentalCancellation)
+    note right of CancelRequested
+        สถานะ: 6 (CANCEL_REQUESTED)
+        - ระบุเหตุผลการขอยกเลิก
+        - แจ้งเตือน Badge สีแดงไปที่เจ้าของ
+    end note
+
+    CancelRequested --> Active: เจ้าของปฏิเสธการยกเลิก (rejectRentalCancellation)
+    note right of Active
+        - สัญญาดำเนินต่อไปตามเวลาเดิม
+    end note
+
+    CancelRequested --> Cancelled: เจ้าของอนุมัติและโอนเงินคืน (approveRentalCancellationAndRefund)
+    note right of Cancelled
+        สถานะ: 4 (CANCELLED)
+        - โอนเงินคืนเข้ากระเป๋าผู้เช่า
+        - ปลดล็อกทรัพย์สินให้พร้อมปล่อยเช่าใหม่
+    end note
+
     Active --> Returned: ผู้เช่าส่งมอบอุปกรณ์คืน (returnItem)
     note right of Returned
-        Smart Contract โอนเงินมัดจำคืน
-        เข้ากระเป๋าผู้เช่าทันที 100%
-    end note
-
-    Active --> Cancelled: ยกเลิกสัญญาเช่า (cancelRental)
-    note right of Cancelled
-        ยกเลิกสัญญาและปลดล็อก
-        เงินมัดจำคืนผู้เช่าทันที
+        สถานะ: 3 (RETURNED)
+        - Smart Contract ปลดล็อกเงินมัดจำ
+        - คืนเงินมัดจำเข้ากระเป๋าผู้เช่า 100%
     end note
 
     Returned --> Available: อุปกรณ์ไอทีพร้อมเปิดให้เช่าใหม่
@@ -162,11 +209,10 @@ stateDiagram-v2
 
 ---
 
-## 4. โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory Structure)
+## 5. โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory Structure)
 
 ```text
 Blockchain-Rental-System-DApp/
-├── .env.local                    # ค่าคอนฟิก Environment Variables (Local)
 ├── .env.local.example            # ตัวอย่างการตั้งค่า Environment Variables
 ├── .gitignore                    # ไฟล์ควบคุมการไม่นำไฟล์ระบบ/node_modules ขึ้น Git
 ├── package.json                  # การตั้งค่า Root Package
@@ -177,6 +223,9 @@ Blockchain-Rental-System-DApp/
     │   └── RentalSystem.json     # ABI (Application Binary Interface) ของสัญญาอัจฉริยะ
     │
     ├── app/                      # ไดเรกทอรีหน้าเว็บระบบ Next.js 14 App Router
+    │   ├── api/
+    │   │   └── rentals/
+    │   │       └── route.js      # REST API สำหรับ Sync สถานะสัญญาข้ามเครื่อง/ข้ามบัญชีแบบ Real-Time
     │   ├── claims/
     │   │   └── page.js           # หน้าตรวจสอบสัญญาและเงินมัดจำสดจากบล็อกเชนแบบ Real-Time (/claims)
     │   ├── dashboard/
@@ -184,7 +233,7 @@ Blockchain-Rental-System-DApp/
     │   ├── my-rentals/
     │   │   └── page.js           # หน้ารายการทรัพย์สินที่ฉันเช่า กำลังเช่าสด และจัดการคืนของ (/my-rentals)
     │   ├── owner/
-    │   │   └── page.js           # แดชบอร์ดเจ้าของทรัพย์สิน สลับสถานะ เปิด/พัก ให้เช่า (/owner)
+    │   │   └── page.js           # แดชบอร์ดเจ้าของ: อนุมัติคำขอเช่าใหม่, อนุมัติยกเลิก & คืนเงิน (/owner)
     │   ├── register/
     │   │   └── page.js           # หน้าลงทะเบียนอุปกรณ์ไอทีชิ้นใหม่ขึ้นบล็อกเชน (/register)
     │   ├── rentals/
@@ -192,7 +241,7 @@ Blockchain-Rental-System-DApp/
     │   │   │   └── page.js       # หน้ารายละเอียดทรัพย์สินรายชิ้น สเปก และการเช่า (/rentals/:id)
     │   │   └── page.js           # หน้าค้นหาและกรองอุปกรณ์ไอทีให้เช่าทั้ง 21 รายการ (/rentals)
     │   ├── globals.css           # สไตล์สากล, เอฟเฟกต์ Glassmorphism และ Web3 Animations
-    │   ├── layout.js             # Root Layout ห่อหุ้ม WalletProvider และ LanguageProvider
+    │   ├── layout.js             # Root Layout ห่อหุ้ม WalletProvider, LanguageProvider และ Alert
     │   └── page.js               # Landing Page แนะนำแพลตฟอร์มและฟีเจอร์เด่น (/)
     │
     ├── components/               # คอมโพเนนต์ UI แบบ Reusable
@@ -201,21 +250,25 @@ Blockchain-Rental-System-DApp/
     │   ├── Footer.js             # ส่วนท้ายหน้าเว็บ แสดงลิงก์และสถานะบล็อกเชน
     │   ├── ItemCard.js           # การ์ดแสดงรายการทรัพย์สินในหน้าแคตตาล็อก
     │   ├── Loading.js            # แอนิเมชัน Spinner แสดงระหว่างรอโหลดข้อมูลบล็อกเชน
-    │   ├── Navbar.js             # แถบเมนูด้านบน สลับ 2 ภาษา และปุ่มเชื่อมต่อกระเป๋า
-    │   ├── RentalCard.js         # การ์ดแสดงสัญญาเช่า พร้อมปุ่มต่ออายุ ส่งคืน และยกเลิกสัญญา
+    │   ├── Navbar.js             # แถบเมนูด้านบน สลับ 2 ภาษา และ Badge แจ้งเตือนคำขอสด
+    │   ├── RentalCard.js         # การ์ดแสดงสัญญาเช่า พร้อมปุ่มต่ออายุ ส่งคืน และขอยกเลิกสัญญา
     │   ├── RentalCountdown.js    # คอมโพเนนต์นับเวลาถอยหลัง Real-Time Countdown Timer แบบวินาทีสด
+    │   ├── RentalExpiryAlert.js  # แถบแจ้งเตือนลอยเมื่อสัญญาเช่าใกล้หมดอายุ (เหลือน้อยกว่า 10 นาที)
     │   ├── RentalModal.js        # หน้าต่างคำนวณราคาเช่า (นาที/ชั่วโมง/วัน) และกดยืนยันทำสัญญาเช่า
-    │   ├── RentalStatus.js       # ป้าย Badge สีแสดงสถานะสัญญา (Active, Returned, Cancelled)
+    │   ├── RentalStatus.js       # ป้าย Badge สีแสดงสถานะสัญญา (Pending, Active, Returned, Cancelled, ฯลฯ)
     │   └── TransactionStatus.js  # ป้ายแสดงสถานะธุรกรรมและลิงก์เปิดดูบน Sepolia Etherscan
     │
     ├── context/                  # React Contexts จัดการ Global State
     │   ├── LanguageContext.js    # ระบบจัดการ 2 ภาษา (ภาษาไทย 🇹🇭 / ภาษาอังกฤษ 🇬🇧)
     │   └── WalletContext.js      # ระบบตรวจจับกระเป๋า MetaMask, Network และ Balance
     │
+    ├── data/
+    │   └── rentals-state.json    # ฐานข้อมูล JSON สำหรับการซิงก์สถานะสัญญาแบบ Multi-Client
+    │
     ├── lib/                      # ยูทิลิตี้และฟังก์ชันเชื่อมต่อบล็อกเชน
-    │   ├── constants.js          # ค่าคงที่ระบบ (Chain ID, Network Name, Fallback RPC, RENTAL_STATUS)
+    │   ├── constants.js          # ค่าคงที่ระบบ (Chain ID, Network Name, Public RPC, RENTAL_STATUS)
     │   ├── contract.js           # ฟังก์ชัน Read/Write สัญญาอัจฉริยะผ่าน ethers.js v6
-    │   ├── seedData.js           # ข้อมูลแคตตาล็อกอุปกรณ์ไอที 21 ชิ้น และระบบ Dynamic Storage
+    │   ├── seedData.js           # ข้อมูลแคตตาล็อกอุปกรณ์ไอที 21 ชิ้น และ Multi-Client Sync Engine
     │   ├── translations.js       # พจนานุกรมคำแปลภาษาไทยและภาษาอังกฤษ
     │   └── wallet.js             # ฟังก์ชันจัดการ EIP-1193, สลับเชน และจัดรูปแบบ Address
     │
@@ -225,7 +278,7 @@ Blockchain-Rental-System-DApp/
 
 ---
 
-## 5. สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)
+## 6. สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)
 
 ### 📌 ข้อมูลการ Deploy จริงบน Sepolia Testnet
 * **ชื่อสัญญา (Contract Name)**: `RentalSystem`
@@ -241,7 +294,7 @@ Blockchain-Rental-System-DApp/
 |---|---|---|
 | `registerItem(name, desc, category, price, deposit)` | เจ้าของทรัพย์สิน (Owner) | บันทึกทรัพย์สินใหม่ขึ้นสู่บล็อกเชน กำหนดค่าเช่ารายวันและเงินมัดจำประกันความเสียหาย |
 | `updateItemAvailability(itemId, available)` | เจ้าของทรัพย์สิน (Owner) | สลับสถานะเปิดให้เช่า หรือพักการให้เช่าทรัพย์สินชั่วคราว |
-| `createRental(itemId, durationInDays)` | ผู้เช่า (Renter, Payable) | ชำระค่าเช่ารวมเงินมัดจำ Escrow โอนค่าเช่าให้เจ้าของ และล็อกมัดจำไว้ในสัญญา |
+| `createRental(itemId, durationInDays)` | ผู้เช่า (Renter, Payable) | ชำระค่าเช่ารวมเงินมัดจำเข้าสู่ระบบ Escrow (เริ่มต้นสถานะ `PENDING`) |
 | `returnItem(rentalId)` | ผู้เช่า (Renter) | ยืนยันการคืนของ และกระตุ้นให้สัญญาโอนคืนเงินมัดจำ Escrow กลับสู่ผู้เช่าอัตโนมัติ 100% |
 | `cancelRental(rentalId)` | คู่สัญญา (Owner / Renter) | ยกเลิกสัญญาเช่าและคืนเงินมัดจำในกรณีเกิดข้อขัดแย้ง |
 | `getAllItems()` / `getAllRentals()` | สาธารณะ (View / Free) | ฟังก์ชันอ่านข้อมูลทรัพย์สินและสัญญาเช่าทั้งหมดในคำสั่งเดียวแบบ Batch |
@@ -249,34 +302,44 @@ Blockchain-Rental-System-DApp/
 
 ---
 
-## 6. ฟีเจอร์หลักและการทำงานแบบ Real-Time (Core Features)
+## 7. ฟีเจอร์หลักและการทำงานแบบ Real-Time (Core Features)
 
-1. **หักค่าเช่า Sepolia ETH จริง เริ่มต้น 0.05 ETH (Real Sepolia ETH Deduction):**
-   - ทุกรายการเช่ามีระบบชำระเงินจริงบนบล็อกเชน โดยกำหนดค่าเช่าและมัดจำเริ่มต้นที่ `0.0500 ETH` เพื่อให้การจำลองธุรกรรมบน Sepolia มีความสมจริงและตัดเหรียญออกจากกระเป๋าจริง
-2. **ระบบนับเวลาถอยหลัง Real-Time Countdown Timer (`RentalCountdown.js`):**
+1. **ระบบการอนุมัติสัญญาเช่า 2 ฝ่าย (Two-Sided Rental Approval & Escrow):**
+   - เมื่อผู้เช่าชำระเงินเช่า (Fee + Deposit) เข้าสู่ระบบ สถานะเริ่มต้นจะเป็น `PENDING: รอเจ้าของอนุมัติการเช่า` โดยเงินจะถูกพักไว้ใน Escrow อย่างปลอดภัย
+   - สัญญาจะยังไม่เริ่มนับเวลาถอยหลัง จนกว่าเจ้าของทรัพย์สินจะกดปุ่ม **"อนุมัติให้เช่า (Approve Rental)"** ในแดชบอร์ดเจ้าของ (`/owner`)
+   - หากเจ้าของกด **"ปฏิเสธ (Reject Rental Request)"** ระบบจะยกเลิกคำขอและคืนเงินมัดจำ+ค่าเช่าให้ผู้เช่าทันที
+2. **ระบบการขอยกเลิกสัญญาและการคืนเงิน (Cancellation Request & Owner Refund Flow):**
+   - ในสัญญาที่กำลังเช่าอยู่ (`ACTIVE`) ผู้เช่าสามารถกด **"ขอยกเลิกสัญญา"** พร้อมระบุเหตุผลได้ทันที
+   - สถานะจะปรับเป็น `CANCEL_REQUESTED: รอเจ้าของอนุมัติยกเลิก & คืนเงิน`
+   - เมื่อสลับเป็นบัญชีเจ้าของ:
+     - Navbar จะแสดง **Badge สีแดงกะพริบ** แจ้งเตือนที่เมนูแดชบอร์ดเจ้าของ (`/owner`)
+     - มี **Alert Banner สีแดงเด่นชัด** พร้อมส่วนเฉพาะ **"คำขอยกเลิกสัญญาเช่าที่รอคุณอนุมัติ & คืนเงิน"** ด้านบนสุดของหน้า `/owner`
+     - เจ้าของสามารถเลือก **"อนุมัติ & คืนเงิน"** (เปิด Modal ปรับยอดเงินคืนและส่งธุรกรรมโอนเงินคืนผู้เช่าผ่าน MetaMask) หรือกด **"ปฏิเสธ"**
+3. **ระบบซิงก์สถานะ Real-Time ข้ามเครื่องและข้ามบัญชี (`/api/rentals` & `rentals-state.json`):**
+   - มี REST API และระบบ Polling อัตโนมัติทุก 6-8 วินาที
+   - สถานะสัญญาจากเซิร์ฟเวอร์มีลำดับความสำคัญสูงสุด (Authoritative State Precedence) ทำให้ทุกเบราว์เซอร์และทุกบัญชีมองเห็นสถานะเดียวกันตรงกัน 100%
+4. **การแสดงผลเฉพาะสัญญาของตัวเองในหน้า "การเช่าของฉัน" (`/my-rentals`):**
+   - ผู้เช่าจะเห็นเฉพาะสัญญาเช่าที่กระเป๋าของตนเองเป็นผู้เช่า (`renter === account`) ป้องกันการมองเห็นสัญญาของผู้อื่น
+5. **ระบบนับเวลาถอยหลัง Real-Time Countdown Timer (`RentalCountdown.js`):**
    - แสดงเวลาคงเหลือของสัญญาเช่าแบบเรียลไทม์เป็น วัน : ชั่วโมง : นาที : วินาที พร้อมแถบสถานะสีกะพริบสด (Live Badge)
    - ปรับสถานะเป็น "หมดเวลาเช่า" อัตโนมัติเมื่อสิ้นสุดสัญญา
-3. **การต่ออายุสัญญาเช่า (Extend Rental Duration):**
-   - ผู้เช่าสามารถกดปุ่ม **"ต่ออายุเช่า (Extend)"** เพื่อเพิ่มระยะเวลาสัญญาเช่าได้ทันที
-   - เลือกระยะเวลาที่ต้องการต่อเพิ่มได้ทั้งแบบ นาที, ชั่วโมง หรือวัน โดยระบบจะคำนวณค่าธรรมเนียมส่วนเพิ่มตามสัดส่วนจริง และส่งธุรกรรมตัดเหรียญ ETH ผ่าน MetaMask
-4. **การยกเลิกสัญญาเช่าและรับเงินมัดจำคืนทันที (Cancel Rental & Instant Deposit Refund):**
-   - หากต้องการยกเลิกสัญญา ผู้เช่าสามารถกดปุ่ม **"ยกเลิกการเช่า (คืนมัดจำ)"** เพื่อยุติสัญญาและปลดล็อกเงินมัดจำใน Escrow คืนกระเป๋าผู้เช่าทันที
-5. **หน้ารายการเช่าของฉันแบบ Real-Time (`/my-rentals`):**
-   - แสดงการ์ดสัญญาเช่าที่ **กำลังเช่าอยู่ (Active)** แบบสด พร้อมตัวเลขนับถอยหลัง
-   - แสดงตัวเลขสรุปทางการเงิน: ค่าเช่ารวมที่จ่ายไป, เงินมัดจำที่ยังถูกล็อกใน Escrow และเงินมัดจำที่ได้คืนแล้ว
-   - แท็บประวัติที่คืนแล้ว/เสร็จสิ้น (Completed Ledger) ที่บันทึก Tx Hash และเวลาคืนของ
-6. **หน้าตรวจสอบสัญญาเช่าและข้อพิพาทบนบล็อกเชนแบบ Real-Time (`/claims`):**
+6. **แถบแจ้งเตือนสัญญาใกล้หมดอายุ (`RentalExpiryAlert.js`):**
+   - แจ้งเตือนแบบ Floating Alert ที่มุมขวาล่างเมื่อสัญญาเช่าเหลือเวลาน้อยกว่า 10 นาที หรือหมดเวลา เพื่อให้ผู้เช่าสามารถกดต่ออายุหรือส่งคืนของได้ทันท่วงที
+7. **การต่ออายุสัญญาเช่า (Extend Rental Duration):**
+   - ผู้เช่าสามารถกดปุ่ม **"ต่ออายุเช่า (Extend)"** เพื่อเพิ่มระยะเวลาสัญญาเช่าได้ทันที (นาที / ชั่วโมง / วัน) พร้อมคำนวณค่าธรรมเนียมส่วนเพิ่มตามสัดส่วนจริง
+8. **หน้าตรวจสอบสัญญาเช่าและข้อพิพาทบนบล็อกเชนแบบ Real-Time (`/claims`):**
    - **Interactive Agreement Selector**: มีเมนูดรอปดาวน์และการ์ดคลิกเลือกสัญญาด่วนเพื่อตรวจสอบสัญญาที่ต้องการได้ในคลิกเดียว
    - **Live Auto-Sync**: ระบบดึงข้อมูลสดจากบล็อกเชนทุก 6 วินาที ตรวจสอบสถานะ Escrow, คู่สัญญา, และลิงก์ Etherscan แบบสด
-   - รองรับการกดต่ออายุ คืนของ หรือยกเลิกสัญญาได้โดยตรงจากหน้า Audit
-7. **ระบบแก้ไข BigInt Serialization และ Dynamic State:**
-   - แปลงค่า BigInt และตัวเลขขนาดใหญ่ให้เป็น String ETH ที่ปลอดภัย ป้องกันข้อผิดพลาด `TypeError: Do not know how to serialize a BigInt` ทำให้รายการเช่าใหม่และประวัติการเช่าบันทึกเข้าสู่ระบบอย่างเสถียร 100%
+9. **หักค่าเช่า Sepolia ETH จริง เริ่มต้น 0.05 ETH:**
+   - ทุกรายการเช่ามีระบบชำระเงินจริงบนบล็อกเชน โดยกำหนดค่าเช่าและมัดจำเริ่มต้นที่ `0.0500 ETH`
+10. **รองรับ 2 ภาษาเต็มรูปแบบ (Bilingual TH / EN):**
+    - ระบบสลับภาษาไทยและอังกฤษ พร้อมระบบจดจำภาษาของผู้ใช้ใน LocalStorage
 
 ---
 
-## 7. แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ 21 รายการ (IT Asset Catalog)
+## 8. แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ 21 รายการ (IT Asset Catalog)
 
-แพลตฟอร์มปรับเปลี่ยนเป็น **ระบบเช่าอุปกรณ์ไอที ฮาร์ดแวร์คอมพิวเตอร์ และอุปกรณ์เทคโนโลยีระดับสูง (IT & Computing Hardware)** ครอบคลุม 21 รายการ โดยกำหนดราคาเริ่มต้นที่ 0.05 ETH:
+แพลตฟอร์มรวบรวม **อุปกรณ์ไอที ฮาร์ดแวร์คอมพิวเตอร์ และอุปกรณ์เทคโนโลยีระดับสูง (IT & Computing Hardware)** ครอบคลุม 21 รายการ โดยกำหนดราคาเริ่มต้นที่ 0.05 ETH:
 
 | # | ชื่ออุปกรณ์ไอที (Hardware Asset) | หมวดหมู่ (Category) | ค่าเช่า (Price/Day) | เงินมัดจำ (Deposit) |
 |---|---|---|---|---|
@@ -304,7 +367,7 @@ Blockchain-Rental-System-DApp/
 
 ---
 
-## 8. ขั้นตอนการติดตั้งและเริ่มใช้งาน (Setup Guide)
+## 9. ขั้นตอนการติดตั้งและเริ่มใช้งาน (Setup Guide)
 
 ### 📌 สิ่งที่ต้องเตรียม (Prerequisites)
 1. **Node.js**: เวอร์ชัน 18.x ขึ้นไป (แนะนำ Node 20 หรือ Node 22)
@@ -326,7 +389,7 @@ npm install
 # NEXT_PUBLIC_CHAIN_ID=11155111
 # NEXT_PUBLIC_NETWORK_NAME=Sepolia
 # NEXT_PUBLIC_EXPLORER_URL=https://sepolia.etherscan.io
-# NEXT_PUBLIC_RPC_URL=https://rpc.sepolia.org
+# NEXT_PUBLIC_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
 
 # 4. สตาร์ต Development Server
 npm run dev
@@ -336,60 +399,74 @@ npm run dev
 
 ---
 
-## 9. คู่มือการทดสอบการใช้งานทีละสเต็ป (Testing Guide)
+## 10. คู่มือการทดสอบการใช้งานทีละสเต็ป (Testing Guide)
 
-### 🛒 สเต็ปที่ 1: การเชื่อมต่อกระเป๋าและเช่าอุปกรณ์ไอที (Rent an Item)
-1. เปิดหน้าเว็บ [http://localhost:3000/rentals](http://localhost:3000/rentals)
-2. กดปุ่ม **"เชื่อมต่อกระเป๋า"** ด้านบนขวา และสลับเครือข่ายเป็น **Sepolia**
-3. เลือกอุปกรณ์ไอทีที่ต้องการเช่า (เช่น **MacBook Pro M3 Max #1** หรือ **Samsung Odyssey Ark #5**) แล้วกด **"เช่าทันที"**
-4. เลือกระยะเวลาเช่า (นาที, ชั่วโมง, หรือวัน) ระบบจะคำนวณค่าเช่ารวมเงินมัดจำ (เริ่มต้น 0.05 ETH)
-5. กดปุ่ม **"ยืนยันและชำระเงิน"** หน้าต่าง MetaMask จะเปิดขึ้นมา ให้กดยืนยันการทำธุรกรรม
-6. เมื่อธุรกรรมยืนยันบนบล็อกเชน ระบบจะแสดง Tx Hash และบันทึกสัญญาเช่าทันที
+### 🛒 สเต็ปที่ 1: การเช่าอุปกรณ์โดยผู้เช่า (Renter Request)
+1. สลับกระเป๋า MetaMask ไปยังบัญชีผู้เช่า (เช่น Account B)
+2. เปิดหน้าเว็บ [http://localhost:3000/rentals](http://localhost:3000/rentals)
+3. เลือกอุปกรณ์ไอทีที่ต้องการเช่า (เช่น **Samsung Odyssey Ark #5** หรือ **NVIDIA RTX 4090 #9**) แล้วกด **"เช่าทันที"**
+4. เลือกระยะเวลาเช่า (นาที, ชั่วโมง, หรือวัน) แล้วกดยืนยันชำระเงินผ่าน MetaMask
+5. สัญญาจะถูกสร้างขึ้นในสถานะ **`รอเจ้าของอนุมัติการเช่า (Pending Owner Approval)`** โดยเงินมัดจำและค่าเช่าจะถูกล็อกไว้ในระบบ Escrow อย่างปลอดภัย
 
-### ⏱️ สเต็ปที่ 2: ตรวจสอบหน้า "การเช่าของฉัน" แบบ Real-Time (/my-rentals)
-1. ไปที่เมนู **"การเช่าของฉัน" ([/my-rentals](http://localhost:3000/my-rentals))**
-2. ในแท็บ **`กำลังเช่าอยู่ (Active)`** จะแสดงรายการอุปกรณ์ที่คุณกำลังเช่าอยู่ทันที
-3. คุณจะเห็นตัวเลขนับถอยหลัง Real-Time Countdown วินาทีสด พร้อมสถานะยอดเงินมัดจำที่ถูกล็อกใน Escrow
-4. ทุกการเช่ามีปุ่มคำสั่งควบคุม 4 ปุ่ม:
+### 🛡️ สเต็ปที่ 2: เจ้าของตรวจสอบและอนุมัติสัญญาเช่า (Owner Approval)
+1. สลับกระเป๋า MetaMask ไปยังบัญชีของเจ้าของทรัพย์สิน (Account A)
+2. ไปที่หน้า **"แดชบอร์ดเจ้าของ" ([/owner](http://localhost:3000/owner))**
+3. ด้านบนสุดของหน้าจะพบแถบแจ้งเตือนและกล่อง **"คำขอเช่าใหม่ที่รอคุณอนุมัติ"** พร้อมรายละเอียดสัญญาและยอดเงินที่ผู้เช่าชำระไว้
+4. กดปุ่ม **`[✔ อนุมัติให้เช่า]`** และกดยืนยันผ่าน MetaMask
+5. สถานะของสัญญาจะเปลี่ยนเป็น **`กำลังเช่าอยู่ (Active)`** ทันที และเวลาสัญญาจะเริ่มนับถอยหลังสด
+
+### ⏱️ สเต็ปที่ 3: ผู้เช่าตรวจสอบสัญญา Real-Time ในหน้า "การเช่าของฉัน" (/my-rentals)
+1. สลับกลับมาที่บัญชีกระเป๋าผู้เช่า (Account B) และไปที่เมนู **"การเช่าของฉัน" ([/my-rentals](http://localhost:3000/my-rentals))**
+2. ระบบจะแสดงเฉพาะรายการเช่าของบัญชีคุณอย่างแม่นยำ พร้อมตัวเลขนับถอยหลัง Real-Time Countdown แบบวินาทีสด
+3. มีปุ่มคำสั่งควบคุมครบถ้วน:
    - **`สเปก`**: ดูรายละเอียดฮาร์ดแวร์
    - **`ตรวจสัญญา`**: ลิงก์ตรงไปยังหน้า `/claims` เพื่อ Audit สัญญา
    - **`ต่ออายุเช่า`**: ขยายเวลาเช่าเพิ่ม
-   - **`ส่งคืนของ` / `ยกเลิกการเช่า (คืนมัดจำ)`**: ปลดล็อกเงินมัดจำคืนกระเป๋า
+   - **`ขอยกเลิกสัญญา`**: ส่งคำขอยกเลิกไปยังเจ้าของทรัพย์สิน
 
-### 🔄 สเต็ปที่ 3: การต่ออายุสัญญาเช่า (Extend Rental)
+### 🔄 สเต็ปที่ 4: การต่ออายุสัญญาเช่า (Extend Rental)
 1. ในหน้า `/my-rentals` คลิกปุ่ม **"ต่ออายุเช่า (Extend)"** บนการ์ดสัญญา
 2. ระบุระยะเวลาที่ต้องการขยาย (เช่น 2 นาที หรือ 1 วัน)
 3. ระบบจะคำนวณค่าธรรมเนียมส่วนเพิ่มตามสัดส่วนจริง
 4. กดยืนยันธุรกรรมใน MetaMask เมื่อทำรายการเสร็จ เวลาสิ้นสุดจะถูกขยายออกไปทันทีแบบ Real-Time
 
-### 💸 สเต็ปที่ 4: การยกเลิกสัญญาหรือคืนของเพื่อรับเงินมัดจำคืน (Cancel & Refund)
-1. คลิกปุ่ม **"ยกเลิกการเช่า (คืนมัดจำ)"** หรือ **"ส่งคืนของ"** บนการ์ดสัญญา
-2. กดยืนยันการทำรายการใน MetaMask
-3. สัญญาจะปลดล็อกเงินมัดจำโอนกลับเข้ากระเป๋าของคุณทันที
-4. รายการเช่าจะย้ายไปยังแท็บ **"ประวัติที่คืนแล้ว/เสร็จสิ้น (Completed)"** พร้อมแสดงยอดเงินมัดจำที่ได้รับคืนเรียบร้อยแล้ว
+### ⚠️ สเต็ปที่ 5: การส่งคำขอยกเลิกสัญญาเช่า (Request Cancellation)
+1. ในกรณีที่ต้องการยกเลิกสัญญา ให้คลิกปุ่ม **"ขอยกเลิกสัญญา"** บนการ์ดสัญญาในหน้า `/my-rentals`
+2. ระบุเหตุผลในการขอยกเลิก และกดยืนยัน
+3. สถานะสัญญาจะเปลี่ยนเป็น **`รอเจ้าของอนุมัติยกเลิก & คืนเงิน (Cancel Requested)`**
 
-### 🔍 สเต็ปที่ 5: การตรวจสอบสัญญาและข้อพิพาทบนบล็อกเชนสด (/claims)
+### 💸 สเต็ปที่ 6: เจ้าของอนุมัติการยกเลิกและโอนเงินคืน (Approve Cancellation & Refund)
+1. สลับไปยังกระเป๋าเจ้าของทรัพย์สิน (Account A)
+2. สังเกตที่ Navbar จะมี **Badge สีแดงกะพริบ** แจ้งเตือนที่เมนูแดชบอร์ดเจ้าของ (`/owner`)
+3. ในหน้า `/owner` ด้านบนสุด จะมีแบนเนอร์สีแดงและกล่อง **"คำขอยกเลิกสัญญาเช่าที่รอคุณอนุมัติ & คืนเงิน"**
+4. คลิกปุ่ม **`[✔ อนุมัติ & คืนเงิน]`** เพื่อเปิดหน้าต่างยืนยันยอดเงินคืน ETH (ค่าเริ่มต้นคือยอดที่ผู้เช่าชำระไว้ทั้งหมด)
+5. กดยืนยันเพื่อโอนเงินคืนผู้เช่าผ่าน MetaMask
+6. สัญญาจะเปลี่ยนสถานะเป็น **`ยกเลิกแล้ว (Cancelled)`** เงินถูกโอนคืนผู้เช่า และอุปกรณ์ไอทีจะปลดล็อกกลับมาพร้อมให้เช่าใหม่ทันที
+
+### 🔍 สเต็ปที่ 7: การตรวจสอบสัญญาและข้อพิพาทบนบล็อกเชนสด (/claims)
 1. ไปที่หน้า **"ตรวจสอบสัญญา" ([/claims](http://localhost:3000/claims))**
-2. เลือกสัญญาที่ต้องการตรวจสอบจากเมนูดรอปดาวน์ **"เลือกสัญญาเพื่อตรวจสอบ"** หรือคลิกที่ Quick Agreement Card เช่น **`[ #101 ]`** หรือ **`[ #102 ]`**
-3. ระบบจะแสดงข้อมูลสถานะ On-Chain, ที่อยู่ผู้เช่าและผู้ให้เช่า, วันเวลาเริ่มต้น-สิ้นสุด, จำนวนเงินใน Escrow, และสถานะข้อพิพาทแบบ Real-Time พร้อม Auto-Sync
+2. เลือกสัญญาที่ต้องการตรวจสอบจากเมนูดรอปดาวน์ **"เลือกสัญญาเพื่อตรวจสอบ"** หรือคลิกที่ Quick Agreement Card เช่น **`[ #5 ]`**
+3. ระบบจะแสดงข้อมูลสถานะ On-Chain, ที่อยู่ผู้เช่าและผู้ให้เช่า, วันเวลาเริ่มต้น-สิ้นสุด, จำนวนเงินใน Escrow, และสถานะข้อพิพาทแบบ Real-Time พร้อม Auto-Sync ทุก 6 วินาที
 
 ---
 
-## 10. ความปลอดภัยและการตรวจสอบสัญญา (Security & Best Practices)
+## 11. ความปลอดภัยและการตรวจสอบสัญญา (Security & Best Practices)
 
 * **OpenZeppelin ReentrancyGuard**: ป้องกันการโจมตี Reentrancy ในทุกฟังก์ชันที่มีการโอนเงิน ETH ด้วย Modifier `nonReentrant`
 * **Checks-Effects-Interactions**: ตรวจสอบเงื่อนไข (`require`) และเปลี่ยนแปลงสถานะสัญญาก่อนการส่งโอน ETH เสมอ
 * **Owner Self-Rental Prevention**: สัญญามีคำสั่ง `require(item.owner != msg.sender)` ป้องกันเจ้าของจ่ายเงินเช่าของตัวเอง
 * **Strict Non-Zero Handling**: ป้องกันการดึงค่า struct ที่ยังไม่ถูกกำหนดค่าใน Solidity mapping บน EVM
+* **Authoritative Multi-Client Sync**: สถานะสัญญาเช่าจาก Server API มีลำดับความสำคัญสูงสุดในการ Overwrite Local Storage ป้องกันปัญหา Cache ชนกันระหว่างกระเป๋า
 * **Clean String Serialization**: ป้องกันปัญหา BigInt Error ด้วยการแปลงข้อมูลคริปโตเป็น String อย่างปลอดภัย
 * **EIP-1193 Listeners**: มีระบบตรวจจับการสลับบัญชี (`accountsChanged`) และสลับเชน (`chainChanged`) ใน MetaMask โดยอัตโนมัติ
 
 ---
 
-## 11. ข้อมูลสัญญาและผู้พัฒนา (Credits)
+## 12. ข้อมูลสัญญาและผู้พัฒนา (Credits)
 
 * **ชื่อโปรเจกต์**: Blockchain-Based Rental System (BlockRental)
 * **ประเภท**: Decentralized Web3 Application (DApp)
 * **Smart Contract Address**: [`0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
 * **เครือข่ายบล็อกเชน**: Ethereum Sepolia Testnet (Chain ID: `11155111`)
+* **RPC Endpoint**: `https://ethereum-sepolia-rpc.publicnode.com`
 * **GitHub Repository**: [https://github.com/Kitikon15/Blockchain-Rental-System-DApp](https://github.com/Kitikon15/Blockchain-Rental-System-DApp)

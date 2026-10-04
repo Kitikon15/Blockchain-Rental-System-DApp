@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { fetchAllItems, isContractConfigured } from '../../lib/contract';
-import { ITEM_CATEGORIES } from '../../lib/constants';
+import { fetchAllItems, fetchAllRentals, isContractConfigured } from '../../lib/contract';
+import { ITEM_CATEGORIES, RENTAL_STATUS } from '../../lib/constants';
 import { useWallet } from '../../context/WalletContext';
 import { useLanguage } from '../../context/LanguageContext';
 import ItemCard from '../../components/ItemCard';
@@ -23,6 +23,7 @@ export default function BrowseRentalsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userActiveRentals, setUserActiveRentals] = useState({});
 
   // Search & Filtering State
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +48,27 @@ export default function BrowseRentalsPage() {
     try {
       const data = await fetchAllItems(account);
       setItems(data || []);
+
+      if (account) {
+        try {
+          const allRentals = await fetchAllRentals(account);
+          const activeMap = {};
+          (allRentals || []).forEach((r) => {
+            if (
+              r.renter &&
+              r.renter.toLowerCase() === account.toLowerCase() &&
+              (r.status === RENTAL_STATUS.ACTIVE || r.status === RENTAL_STATUS.CANCEL_REQUESTED)
+            ) {
+              activeMap[Number(r.itemId)] = r;
+            }
+          });
+          setUserActiveRentals(activeMap);
+        } catch (rErr) {
+          console.warn('Could not load user active rentals in catalog:', rErr.message);
+        }
+      } else {
+        setUserActiveRentals({});
+      }
     } catch (err) {
       console.warn('Items query notice:', err.message);
       setError(err);
@@ -54,6 +76,10 @@ export default function BrowseRentalsPage() {
       setLoading(false);
     }
   }, [contractConfigured, account]);
+
+  useEffect(() => {
+    setUserActiveRentals({});
+  }, [account]);
 
   useEffect(() => {
     loadItems();
@@ -141,6 +167,33 @@ export default function BrowseRentalsPage() {
                 : 'To query live rental assets from Ethereum Sepolia, deploy your contract in Remix IDE and configure NEXT_PUBLIC_CONTRACT_ADDRESS in .env.local.'}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Active Rentals Quick Access Banner */}
+      {Object.keys(userActiveRentals).length > 0 && (
+        <div className="alert alert-success border-success-subtle shadow-sm mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div className="d-flex align-items-center gap-3">
+            <span className="badge bg-success fs-5 p-2.5 rounded-circle text-white">
+              <i className="bi bi-bag-check-fill"></i>
+            </span>
+            <div>
+              <strong className="d-block text-dark">
+                {language === 'th'
+                  ? `คุณมีสัญญาเช่าที่กำลังใช้งานอยู่ ${Object.keys(userActiveRentals).length} รายการ`
+                  : `You currently have ${Object.keys(userActiveRentals).length} active rental contract(s)`}
+              </strong>
+              <span className="small text-muted">
+                {language === 'th'
+                  ? 'ตรวจสอบสถานะ เวลาคงเหลือแบบ Real-time และข้อมูลสัญญาเช่าของคุณได้ที่นี่'
+                  : 'Check your real-time countdown, rental information, or submit return/cancellation.'}
+              </span>
+            </div>
+          </div>
+          <Link href="/my-rentals" className="btn btn-success btn-sm fw-bold">
+            <i className="bi bi-collection-play me-1"></i>
+            {language === 'th' ? 'ไปยังศูนย์ข้อมูลการเช่าของฉัน' : 'View My Rentals'}
+          </Link>
         </div>
       )}
 
@@ -258,7 +311,11 @@ export default function BrowseRentalsPage() {
           <div className="row g-4">
             {sortedItems.map((item) => (
               <div key={item.itemId} className="col-12 col-sm-6 col-lg-4">
-                <ItemCard item={item} onRentClick={handleOpenRentModal} />
+                <ItemCard
+                  item={item}
+                  onRentClick={handleOpenRentModal}
+                  userRental={userActiveRentals[Number(item.itemId)] || null}
+                />
               </div>
             ))}
           </div>

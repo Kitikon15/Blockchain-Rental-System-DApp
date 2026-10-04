@@ -5,6 +5,7 @@ import './globals.css';
 import { WalletProvider } from '../context/WalletContext';
 import { LanguageProvider } from '../context/LanguageContext';
 import Navbar from '../components/Navbar';
+import RentalExpiryAlert from '../components/RentalExpiryAlert';
 import Footer from '../components/Footer';
 
 export const metadata = {
@@ -21,6 +22,9 @@ export default function RootLayout({ children }) {
           <WalletProvider>
             {/* Main Navigation Bar */}
             <Navbar />
+
+            {/* Global Expiry Countdown & Notification Alert Banner */}
+            <RentalExpiryAlert />
 
             {/* Main Page View */}
             <main className="flex-grow-1">

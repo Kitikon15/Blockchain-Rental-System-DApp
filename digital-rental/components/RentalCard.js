@@ -72,11 +72,19 @@ export default function RentalCard({
           <div className="row g-2 small">
             <div className="col-6">
               <span className="text-muted d-block">{language === 'th' ? 'เริ่มต้น:' : 'Start Time:'}</span>
-              <span className="fw-medium font-monospace text-dark">{startDateStr}</span>
+              <span className="fw-medium font-monospace text-dark">
+                {rental.status === RENTAL_STATUS.PENDING
+                  ? (language === 'th' ? 'รอเจ้าของอนุมัติ' : 'Awaiting Approval')
+                  : (rental.startTime ? startDateStr : '-')}
+              </span>
             </div>
             <div className="col-6">
               <span className="text-muted d-block">{language === 'th' ? 'สิ้นสุด:' : 'End Time:'}</span>
-              <span className="fw-medium font-monospace text-dark">{endDateStr}</span>
+              <span className="fw-medium font-monospace text-dark">
+                {rental.status === RENTAL_STATUS.PENDING
+                  ? `${rental.durationValue || 1} ${rental.durationUnit || 'days'}`
+                  : (rental.endTime ? endDateStr : '-')}
+              </span>
             </div>
           </div>
         </div>
@@ -125,6 +133,68 @@ export default function RentalCard({
           </div>
         </div>
 
+        {/* Pending Approval Notice */}
+        {rental.status === RENTAL_STATUS.PENDING && (
+          <div className="alert alert-warning py-2 px-2.5 small mb-3 border-warning">
+            <div className="d-flex align-items-center mb-1">
+              <i className="bi bi-clock-history text-warning me-1.5 fs-6"></i>
+              <strong className="text-dark">
+                {language === 'th' ? 'คำขอเช่าอยู่ระหว่างรอเจ้าของอนุมัติ' : 'Rental Request Pending Owner Approval'}
+              </strong>
+            </div>
+            <p className="mb-0 text-muted" style={{ fontSize: '0.82rem' }}>
+              {language === 'th'
+                ? `คำขอเช่าได้ถูกส่งไปยังเจ้าของอุปกรณ์ (${formatAddress(rental.owner)}) เรียบร้อยแล้ว ยอดชำระ ${rental.totalPaidEth} ETH ถูกพักไว้ในระบบอย่างปลอดภัย เมื่อเจ้าของกดอนุมัติ ระบบจะเริ่มนับเวลาการเช่าทันที`
+                : `Rental request submitted to owner (${formatAddress(rental.owner)}). ${rental.totalPaidEth} ETH is held safely in escrow. Timer starts automatically once approved.`}
+            </p>
+          </div>
+        )}
+
+        {/* Cancellation Request Notice */}
+        {rental.status === RENTAL_STATUS.CANCEL_REQUESTED && (
+          <div className="alert alert-warning py-2 px-2.5 small mb-3 border-warning">
+            <div className="d-flex align-items-center mb-1">
+              <i className="bi bi-hourglass-split text-warning me-1.5 fs-6"></i>
+              <strong className="text-dark">
+                {language === 'th' ? 'ส่งคำขอยกเลิกสัญญาแล้ว' : 'Cancellation Request Submitted'}
+              </strong>
+            </div>
+            <p className="mb-0 text-muted" style={{ fontSize: '0.82rem' }}>
+              {language === 'th'
+                ? `กำลังรอเจ้าของทรัพย์สิน (${formatAddress(rental.owner)}) กดอนุมัติการยกเลิกและโอนคืนเงินค่าเช่า/มัดจำ (${rental.totalPaidEth || rental.depositEth} ETH) กลับเข้ากระเป๋าของคุณ`
+                : `Awaiting owner (${formatAddress(rental.owner)}) approval to confirm cancellation and refund ${rental.totalPaidEth || rental.depositEth} ETH to your wallet.`}
+            </p>
+          </div>
+        )}
+
+        {/* Cancelled & Refunded Notice */}
+        {rental.status === RENTAL_STATUS.CANCELLED && (
+          <div className="alert alert-secondary py-2 px-2.5 small mb-3 bg-light border">
+            <div className="d-flex justify-content-between align-items-center">
+              <span className="fw-semibold text-dark">
+                <i className="bi bi-check-circle-fill text-success me-1"></i>
+                {language === 'th' ? 'ยกเลิกสัญญาและคืนเงินแล้ว' : 'Cancelled & Refunded'}
+              </span>
+              <span className="fw-bold font-monospace text-success">
+                +{rental.refundAmountEth || rental.totalPaidEth || rental.depositEth} ETH
+              </span>
+            </div>
+            {rental.refundTxHash && (
+              <div className="mt-1 pt-1 border-top border-secondary-subtle">
+                <a
+                  href={`${explorerBase}/tx/${rental.refundTxHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-decoration-none small font-monospace text-primary"
+                >
+                  <i className="bi bi-receipt me-1"></i>
+                  {language === 'th' ? 'ดูหลักฐานการโอนคืนบน Etherscan' : 'View refund transaction on Etherscan'} <i className="bi bi-box-arrow-up-right small"></i>
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Controls */}
         <div className="d-flex flex-wrap gap-2 pt-2 border-top">
           <Link
@@ -168,12 +238,23 @@ export default function RentalCard({
                 <button
                   onClick={() => onCancel(rental)}
                   className="btn btn-outline-danger btn-sm flex-grow-1 fw-medium"
-                  title={language === 'th' ? 'ยกเลิกสัญญาเช่าและรับเงินมัดจำคืนทันที' : 'Cancel rental and refund deposit'}
+                  title={language === 'th' ? 'ส่งคำขอยกเลิกสัญญาเช่าและรอเจ้าของอนุมัติคืนเงิน' : 'Request cancellation and await owner approval & refund'}
                 >
-                  <i className="bi bi-x-circle me-1"></i> {language === 'th' ? 'ยกเลิกการเช่า (คืนมัดจำ)' : 'Cancel & Refund'}
+                  <i className="bi bi-x-circle me-1"></i> {language === 'th' ? 'ขอยกเลิก (รอเจ้าของอนุมัติ)' : 'Request Cancel'}
                 </button>
               )}
             </>
+          )}
+
+          {isCurrentUserRenter && rental.status === RENTAL_STATUS.CANCEL_REQUESTED && (
+            <button
+              disabled
+              className="btn btn-warning-subtle text-warning-emphasis border border-warning-subtle btn-sm flex-grow-1 fw-medium"
+              title={language === 'th' ? 'ส่งคำขอแล้ว รอเจ้าของอนุมัติและโอนเงินคืน' : 'Cancellation requested, awaiting owner refund'}
+            >
+              <i className="bi bi-hourglass-split me-1"></i>
+              {language === 'th' ? 'รอเจ้าของอนุมัติ & คืนเงิน' : 'Awaiting Approval & Refund'}
+            </button>
           )}
 
           {rental.status === RENTAL_STATUS.PENDING && onCancel && (

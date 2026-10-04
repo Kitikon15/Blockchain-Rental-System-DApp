@@ -37,7 +37,7 @@ export default function RentalStatus({ status, available = null }) {
     case RENTAL_STATUS.PENDING:
       return (
         <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
-          <i className="bi bi-clock-history me-1"></i> {t('common.pending')}
+          <i className="bi bi-clock-history me-1"></i> {language === 'th' ? 'รอเจ้าของอนุมัติการเช่า' : 'Pending Owner Approval'}
         </span>
       );
     case RENTAL_STATUS.ACTIVE:
@@ -50,6 +50,12 @@ export default function RentalStatus({ status, available = null }) {
       return (
         <span className="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">
           <i className="bi bi-arrow-return-left me-1"></i> {t('common.returned')}
+        </span>
+      );
+    case RENTAL_STATUS.CANCEL_REQUESTED:
+      return (
+        <span className="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+          <i className="bi bi-hourglass-split me-1"></i> {language === 'th' ? 'รอเจ้าของอนุมัติยกเลิก & คืนเงิน' : 'Cancel Requested (Waiting Approval)'}
         </span>
       );
     case RENTAL_STATUS.CANCELLED:

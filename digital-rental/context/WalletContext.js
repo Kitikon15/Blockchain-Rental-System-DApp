@@ -26,6 +26,7 @@ const WalletContext = createContext({
   error: null,
   connect: async () => {},
   disconnect: async () => {},
+  switchAccount: async () => {},
   switchNetwork: async () => {},
   syncWalletState: async () => {},
 });
@@ -182,6 +183,35 @@ export function WalletProvider({ children }) {
     }
   };
 
+  // Switch MetaMask account or request account selection permissions
+  const switchAccount = async () => {
+    if (!isMetaMaskInstalled()) return;
+    setIsConnecting(true);
+    setError(null);
+    try {
+      localStorage.removeItem('blockrental_disconnected');
+      await window.ethereum.request({
+        method: 'wallet_requestPermissions',
+        params: [{ eth_accounts: {} }],
+      });
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts && accounts.length > 0) {
+        const selected = window.ethereum?.selectedAddress;
+        const target = (selected && accounts.some((a) => a.toLowerCase() === selected.toLowerCase()))
+          ? accounts.find((a) => a.toLowerCase() === selected.toLowerCase())
+          : accounts[0];
+        setAccount(target);
+        await updateBalance(target);
+      }
+    } catch (err) {
+      if (err.code !== 4001) {
+        setError(err.message || 'Failed to switch account.');
+      }
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
   // Listen to MetaMask lifecycle events
   useEffect(() => {
     syncWalletState();
@@ -189,12 +219,16 @@ export function WalletProvider({ children }) {
     if (typeof window !== 'undefined' && window.ethereum) {
       const handleAccountsChanged = (accounts) => {
         const isDisconnected = localStorage.getItem('blockrental_disconnected') === 'true';
-        if (isDisconnected || accounts.length === 0) {
+        if (isDisconnected || !accounts || accounts.length === 0) {
           setAccount(null);
           setBalance('0.0');
         } else {
-          setAccount(accounts[0]);
-          updateBalance(accounts[0]);
+          const selected = window.ethereum?.selectedAddress;
+          const target = (selected && accounts.some((a) => a.toLowerCase() === selected.toLowerCase()))
+            ? accounts.find((a) => a.toLowerCase() === selected.toLowerCase())
+            : accounts[0];
+          setAccount(target);
+          updateBalance(target);
         }
       };
 
@@ -231,6 +265,7 @@ export function WalletProvider({ children }) {
         error,
         connect,
         disconnect,
+        switchAccount,
         switchNetwork,
         syncWalletState,
       }}

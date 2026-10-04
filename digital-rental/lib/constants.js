@@ -8,7 +8,7 @@ export const SEPOLIA_CHAIN_ID = 11155111;
 export const SEPOLIA_HEX_CHAIN_ID = '0xaa36a7';
 export const NETWORK_NAME = 'Sepolia';
 export const DEFAULT_EXPLORER_URL = 'https://sepolia.etherscan.io';
-export const DEFAULT_RPC_URL = 'https://rpc.sepolia.org';
+export const DEFAULT_RPC_URL = 'https://ethereum-sepolia-rpc.publicnode.com';
 export const DEFAULT_CONTRACT_ADDRESS = '0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861';
 
 // Rental status codes corresponding to the smart contract enum
@@ -19,6 +19,7 @@ export const RENTAL_STATUS = {
   RETURNED: 3,
   CANCELLED: 4,
   COMPLETED: 5,
+  CANCEL_REQUESTED: 6, // Renter requested cancellation, awaiting owner approval & refund
 };
 
 export const RENTAL_STATUS_LABELS = {
@@ -28,6 +29,7 @@ export const RENTAL_STATUS_LABELS = {
   [RENTAL_STATUS.RETURNED]: 'Returned',
   [RENTAL_STATUS.CANCELLED]: 'Cancelled',
   [RENTAL_STATUS.COMPLETED]: 'Completed',
+  [RENTAL_STATUS.CANCEL_REQUESTED]: 'Cancel Requested (Waiting Approval)',
 };
 
 export const RENTAL_STATUS_BADGES = {
@@ -37,6 +39,7 @@ export const RENTAL_STATUS_BADGES = {
   [RENTAL_STATUS.RETURNED]: 'info',
   [RENTAL_STATUS.CANCELLED]: 'secondary',
   [RENTAL_STATUS.COMPLETED]: 'success',
+  [RENTAL_STATUS.CANCEL_REQUESTED]: 'warning',
 };
 
 // Item categories supported for browsing and registration (IT & Computing Focus)
