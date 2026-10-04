@@ -21,11 +21,10 @@
 5. [โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด (Directory Structure)](#5-โครงสร้างไดเรกทอรีและองค์ประกอบไฟล์ทั้งหมด-directory-structure)
 6. [สถาปัตยกรรมและรายละเอียด Smart Contract (Smart Contract Specifications)](#6-สถาปัตยกรรมและรายละเอียด-smart-contract-smart-contract-specifications)
 7. [ฟีเจอร์หลักและการทำงานแบบ Real-Time (Core Features & Real-Time Capabilities)](#7-ฟีเจอร์หลักและการทำงานแบบ-real-time-core-features)
-8. [แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ 21 รายการ (IT Asset Catalog)](#8-แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ-21-รายการ-it-asset-catalog)
-9. [ขั้นตอนการติดตั้งและเริ่มใช้งาน (Step-by-Step Installation & Setup Guide)](#9-ขั้นตอนการติดตั้งและเริ่มใช้งาน-setup-guide)
-10. [คู่มือการทดสอบการใช้งานทีละสเต็ป (Step-by-Step Testing & User Guide)](#10-คู่มือการทดสอบการใช้งานทีละสเต็ป-testing-guide)
-11. [ความปลอดภัยและการตรวจสอบสัญญา (Security, Best Practices & On-Chain Audit)](#11-ความปลอดภัยและการตรวจสอบสัญญา-security--best-practices)
-12. [ข้อมูลสัญญาและผู้พัฒนา (Contract Info & Developer Credits)](#12-ข้อมูลสัญญาและผู้พัฒนา-credits)
+8. [ขั้นตอนการติดตั้งและเริ่มใช้งาน (Step-by-Step Installation & Setup Guide)](#9-ขั้นตอนการติดตั้งและเริ่มใช้งาน-setup-guide)
+9. [คู่มือการทดสอบการใช้งานทีละสเต็ป (Step-by-Step Testing & User Guide)](#10-คู่มือการทดสอบการใช้งานทีละสเต็ป-testing-guide)
+10. [ความปลอดภัยและการตรวจสอบสัญญา (Security, Best Practices & On-Chain Audit)](#11-ความปลอดภัยและการตรวจสอบสัญญา-security--best-practices)
+11. [ข้อมูลสัญญาและผู้พัฒนา (Contract Info & Developer Credits)](#12-ข้อมูลสัญญาและผู้พัฒนา-credits)
 
 ---
 
@@ -337,37 +336,8 @@ Blockchain-Rental-System-DApp/
 
 ---
 
-## 8. แคตตาล็อกอุปกรณ์ไอทีและฮาร์ดแวร์ระดับมืออาชีพ 21 รายการ (IT Asset Catalog)
 
-แพลตฟอร์มรวบรวม **อุปกรณ์ไอที ฮาร์ดแวร์คอมพิวเตอร์ และอุปกรณ์เทคโนโลยีระดับสูง (IT & Computing Hardware)** ครอบคลุม 21 รายการ โดยกำหนดราคาเริ่มต้นที่ 0.05 ETH:
-
-| # | ชื่ออุปกรณ์ไอที (Hardware Asset) | หมวดหมู่ (Category) | ค่าเช่า (Price/Day) | เงินมัดจำ (Deposit) |
-|---|---|---|---|---|
-| **1** | MacBook Pro 16" M3 Max (16-Core CPU / 40-Core GPU / 128GB RAM / 8TB SSD) | Laptops & Notebooks | `0.0500 ETH` | `0.0500 ETH` |
-| **2** | ASUS ROG Zephyrus G16 (Intel Core Ultra 9 / RTX 4090 / OLED 240Hz / 64GB DDR5) | Laptops & Notebooks | `0.0600 ETH` | `0.0800 ETH` |
-| **3** | Apple Mac Studio M2 Ultra (24-Core CPU / 76-Core GPU / 192GB Unified Memory) | Desktops & Workstations | `0.0500 ETH` | `0.0500 ETH` |
-| **4** | Custom AI Workstation Quad-GPU (AMD Threadripper 7980X 64-Core / 2x RTX 4090 24GB) | Desktops & Workstations | `0.0800 ETH` | `0.1000 ETH` |
-| **5** | Samsung Odyssey Ark 55" 4K Curved 1000R Quantum Mini-LED Gaming & Dev Monitor | Monitors & Displays | `0.0600 ETH` | `0.0800 ETH` |
-| **6** | ASUS ROG Swift OLED PG32UCDM 32" 4K 240Hz Gaming & Content Creation Monitor | Monitors & Displays | `0.0500 ETH` | `0.0500 ETH` |
-| **7** | QNAP TVS-h1688X 16-Bay High-Speed Enterprise NAS (Intel Xeon / 128GB ECC RAM) | Networking & Servers | `0.0500 ETH` | `0.0500 ETH` |
-| **8** | Cisco Catalyst 9300 Series 48-Port PoE+ Layer 3 Enterprise Switch | Networking & Servers | `0.0500 ETH` | `0.0800 ETH` |
-| **9** | NVIDIA GeForce RTX 4090 24GB GDDR6X Liquid-Cooled AI / Rendering GPU | Electronics & Gadgets | `0.0500 ETH` | `0.0500 ETH` |
-| **10** | Apple Vision Pro 1TB (Spatial Computer & Developer Strap Kit) | VR & Gaming Gear | `0.0750 ETH` | `0.0900 ETH` |
-| **11** | Meta Quest Pro Enterprise Edition (Face & Eye Tracking + Touch Pro Controllers) | VR & Gaming Gear | `0.0500 ETH` | `0.0500 ETH` |
-| **12** | EcoFlow DELTA 2 Max Portable Power Station (2400W / 2048Wh) | Electronics & Gadgets | `0.0500 ETH` | `0.0500 ETH` |
-| **13** | Elgato Stream Deck XL + Shure SM7B + RØDECaster Pro II Audio Hub | Electronics & Gadgets | `0.0500 ETH` | `0.0500 ETH` |
-| **14** | Alienware m18 R2 Gaming Laptop (Core i9-14900HX / RTX 4090 / 64GB DDR5 / 4TB SSD) | Laptops & Notebooks | `0.0650 ETH` | `0.0800 ETH` |
-| **15** | Dell Precision 7960 Tower Workstation (Intel Xeon w9-3495X 56-Core / NVIDIA RTX 6000 Ada 48GB) | Desktops & Workstations | `0.0900 ETH` | `0.1200 ETH` |
-| **16** | Apple Pro Display XDR 32" Retina 6K (Nano-Texture Glass + Pro Stand) | Monitors & Displays | `0.0700 ETH` | `0.0800 ETH` |
-| **17** | Synology DiskStation DS3622xs+ 12-Bay Enterprise NAS (48TB Storage / Dual 10GbE) | Networking & Servers | `0.0550 ETH` | `0.0600 ETH` |
-| **18** | HTC VIVE XR Elite Business Edition VR/AR Headset + Full Body Trackers | VR & Gaming Gear | `0.0500 ETH` | `0.0500 ETH` |
-| **19** | Ubiquiti UniFi Dream Machine Special Edition (UDM-SE) + Enterprise WiFi 7 AP Suite | Networking & Servers | `0.0500 ETH` | `0.0500 ETH` |
-| **20** | NVIDIA Jetson AGX Orin 64GB Developer Kit (275 TOPS AI Engine) | Electronics & Gadgets | `0.0500 ETH` | `0.0500 ETH` |
-| **21** | Framework Laptop 16 Modular Edition (Ryzen 9 7940HS / Radeon RX 7700S / Modular GPU) | Laptops & Notebooks | `0.0550 ETH` | `0.0600 ETH` |
-
----
-
-## 9. ขั้นตอนการติดตั้งและเริ่มใช้งาน (Setup Guide)
+## 8. ขั้นตอนการติดตั้งและเริ่มใช้งาน (Setup Guide)
 
 ### 📌 สิ่งที่ต้องเตรียม (Prerequisites)
 1. **Node.js**: เวอร์ชัน 18.x ขึ้นไป (แนะนำ Node 20 หรือ Node 22)
@@ -399,7 +369,7 @@ npm run dev
 
 ---
 
-## 10. คู่มือการทดสอบการใช้งานทีละสเต็ป (Testing Guide)
+## 9. คู่มือการทดสอบการใช้งานทีละสเต็ป (Testing Guide)
 
 ### 🛒 สเต็ปที่ 1: การเช่าอุปกรณ์โดยผู้เช่า (Renter Request)
 1. สลับกระเป๋า MetaMask ไปยังบัญชีผู้เช่า (เช่น Account B)
@@ -450,7 +420,7 @@ npm run dev
 
 ---
 
-## 11. ความปลอดภัยและการตรวจสอบสัญญา (Security & Best Practices)
+## 10. ความปลอดภัยและการตรวจสอบสัญญา (Security & Best Practices)
 
 * **OpenZeppelin ReentrancyGuard**: ป้องกันการโจมตี Reentrancy ในทุกฟังก์ชันที่มีการโอนเงิน ETH ด้วย Modifier `nonReentrant`
 * **Checks-Effects-Interactions**: ตรวจสอบเงื่อนไข (`require`) และเปลี่ยนแปลงสถานะสัญญาก่อนการส่งโอน ETH เสมอ
@@ -462,11 +432,8 @@ npm run dev
 
 ---
 
-## 12. ข้อมูลสัญญาและผู้พัฒนา (Credits)
+## 11. ข้อมูลสัญญาและผู้พัฒนา (Credits)
 
 * **ชื่อโปรเจกต์**: Blockchain-Based Rental System (BlockRental)
 * **ประเภท**: Decentralized Web3 Application (DApp)
-* **Smart Contract Address**: [`0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861`](https://sepolia.etherscan.io/address/0xa0F7a17b2e403091F0397B3a8B9f99A8B65A5861)
-* **เครือข่ายบล็อกเชน**: Ethereum Sepolia Testnet (Chain ID: `11155111`)
 * **RPC Endpoint**: `https://ethereum-sepolia-rpc.publicnode.com`
-* **GitHub Repository**: [https://github.com/Kitikon15/Blockchain-Rental-System-DApp](https://github.com/Kitikon15/Blockchain-Rental-System-DApp)
