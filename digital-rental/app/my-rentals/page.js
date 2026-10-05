@@ -13,7 +13,6 @@ import {
   extendRentalOnChain,
   isContractConfigured,
   parseContractError,
-  clearAllTestRentals,
 } from '../../lib/contract';
 import { RENTAL_STATUS, DEFAULT_EXPLORER_URL } from '../../lib/constants';
 import RentalCard from '../../components/RentalCard';
@@ -41,21 +40,6 @@ export default function MyRentalsPage() {
   // Status Filter: 'ACTIVE' | 'CANCEL_REQUESTED' | 'RETURNED' | 'ALL' | 'CANCELLED'
   const [statusFilter, setStatusFilter] = useState('ACTIVE');
 
-  // Reset Test Rentals Modal State
-  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-  const [resetFeedback, setResetFeedback] = useState(null);
-
-  const handleResetTestRentals = () => {
-    clearAllTestRentals();
-    setResetConfirmOpen(false);
-    setResetFeedback(
-      language === 'th'
-        ? 'ล้างข้อมูลประวัติการเช่าทดสอบทั้งหมดเรียบร้อยแล้ว'
-        : 'All local test rentals have been reset successfully'
-    );
-    loadUserRentals();
-    setTimeout(() => setResetFeedback(null), 3500);
-  };
 
   // Return & Cancel Action Modals State
   const [actionRental, setActionRental] = useState(null);
@@ -389,25 +373,8 @@ export default function MyRentalsPage() {
                   <i className="bi bi-arrow-left-right me-1.5"></i>
                   {language === 'th' ? 'สลับบัญชีใน MetaMask' : 'Switch Account'}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setResetConfirmOpen(true)}
-                  className="btn btn-outline-danger btn-sm rounded-pill px-3 py-1.5 d-flex align-items-center"
-                  title="ล้างข้อมูลประวัติการเช่าทดสอบเก่าทั้งหมดออกจากเบราว์เซอร์ เพื่อเริ่มทดสอบใหม่จาก 0"
-                >
-                  <i className="bi bi-trash3 me-1.5"></i>
-                  {language === 'th' ? 'ล้างประวัติทดสอบ (Reset)' : 'Reset Test Data'}
-                </button>
               </div>
             </div>
-
-            {resetFeedback && (
-              <div className="alert alert-success py-1.5 px-3 small mt-3 mb-0 rounded-2 d-flex align-items-center animate__animated animate__fadeIn">
-                <i className="bi bi-check-circle-fill me-2"></i>
-                <span>{resetFeedback}</span>
-              </div>
-            )}
           </div>
 
           {/* Financial & Deposit Summary Bar */}
@@ -1199,63 +1166,6 @@ export default function MyRentalsPage() {
         </>
       )}
 
-      {/* Reset Test Rentals Confirmation Modal */}
-      {resetConfirmOpen && (
-        <>
-          <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.75)', zIndex: 1060 }}>
-            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '440px' }}>
-              <div className="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
-                <div className="modal-header bg-danger text-white py-3">
-                  <h6 className="modal-title fw-bold d-flex align-items-center">
-                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
-                    {language === 'th' ? 'ยืนยันล้างข้อมูลประวัติการเช่าทดสอบ' : 'Confirm Reset Test Rentals'}
-                  </h6>
-                  <button
-                    type="button"
-                    className="btn-close btn-close-white"
-                    onClick={() => setResetConfirmOpen(false)}
-                    aria-label="Close"
-                  ></button>
-                </div>
-                <div className="modal-body p-4 text-center">
-                  <div
-                    className="rounded-circle bg-danger-subtle text-danger mx-auto mb-3 d-flex align-items-center justify-content-center"
-                    style={{ width: '56px', height: '56px' }}
-                  >
-                    <i className="bi bi-trash3-fill fs-3"></i>
-                  </div>
-                  <h6 className="fw-bold text-dark mb-2">
-                    {language === 'th' ? 'ล้างประวัติการเช่าทดสอบทั้งหมด?' : 'Reset all local test rental data?'}
-                  </h6>
-                  <p className="text-muted small mb-0">
-                    {language === 'th'
-                      ? 'ระบบจะลบประวัติการเช่าทดสอบในเครื่องทั้งหมด และคืนสถานะอุปกรณ์ที่เคยเช่าไว้ให้กลับมา "พร้อมให้เช่า" เพื่อให้คุณสามารถทดสอบเช่าใหม่ได้ตั้งแต่ต้น'
-                      : 'This will clear all local test rental records and restore item availability, allowing you to run clean end-to-end rental tests.'}
-                  </p>
-                </div>
-                <div className="modal-footer bg-light py-2.5 d-flex justify-content-end gap-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary rounded-3"
-                    onClick={() => setResetConfirmOpen(false)}
-                  >
-                    {language === 'th' ? 'ยกเลิก' : 'Cancel'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger fw-bold rounded-3 px-3.5"
-                    onClick={handleResetTestRentals}
-                  >
-                    <i className="bi bi-trash3 me-1.5"></i>
-                    {language === 'th' ? 'ยืนยันล้างข้อมูล' : 'Confirm Reset'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="modal-backdrop fade show" style={{ zIndex: 1055 }}></div>
-        </>
-      )}
     </div>
   );
 }
